@@ -1,114 +1,108 @@
-use tauri::WebviewWindow;
-use windows::{
-    core::{w, BOOL, PCWSTR},
-    Win32::{
-        Foundation::{HWND, LPARAM, RECT},
-        UI::WindowsAndMessaging::{
-            EnumWindows, FindWindowExW, FindWindowW, GetClassNameW, GetParent, GetWindowLongPtrW,
-            GetWindowRect, SetParent, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, GWL_STYLE,
-            HWND_TOP, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_SHOWWINDOW, WS_CHILD, WS_EX_APPWINDOW,
-            WS_EX_TOOLWINDOW, WS_POPUP,
-        },
-    },
-};
+use serde::{Deserialize, Serialize};
+use tauri::{Monitor, PhysicalPosition, PhysicalSize, WebviewWindow};
 
-pub struct DesktopAttachment {
-    pub host_class: String,
+pub const MIN_WIDTH: u32 = 360;
+pub const MIN_HEIGHT: u32 = 420;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowLayout {
+    pub monitor_index: usize,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
 }
 
-unsafe extern "system" fn find_icon_host(window: HWND, parameter: LPARAM) -> BOOL {
-    if unsafe {
-        FindWindowExW(
-            Some(window),
-            None,
-            w!("SHELLDLL_DefView"),
-            PCWSTR::null(),
-        )
+pub fn default_layout(monitor: &Monitor, monitor_index: usize) -> WindowLayout {
+    let width = monitor.size().width.saturating_sub(48).min(520).max(MIN_WIDTH);
+    let height = monitor.size().height.saturating_sub(48).min(800).max(MIN_HEIGHT);
+    WindowLayout {
+        monitor_index,
+        x: monitor.position().x + monitor.size().width as i32 - width as i32 - 24,
+        y: monitor.position().y + 24,
+        width,
+        height,
     }
-    .is_ok()
-    {
-        let output = unsafe { &mut *(parameter.0 as *mut Option<HWND>) };
-        *output = Some(window);
-        return BOOL(0);
-    }
-    BOOL(1)
 }
 
-fn desktop_host() -> Result<HWND, String> {
-    let mut icon_host = None;
-    unsafe {
-        let _ = EnumWindows(
-            Some(find_icon_host),
-            LPARAM((&mut icon_host as *mut Option<HWND>) as isize),
-        );
-    }
+pub fn clamp_layout(layout: WindowLayout, monitor: &Monitor) -> WindowLayout {
+    let width = layout
+        .width
+        .max(MIN_WIDTH)
+        .min(monitor.size().width.max(MIN_WIDTH));
+    let height = layout
+        .height
+        .max(MIN_HEIGHT)
+        .min(monitor.size().height.max(MIN_HEIGHT));
+    let min_x = monitor.position().x;
+    let min_y = monitor.position().y;
+    let max_x = min_x + monitor.size().width as i32 - width as i32;
+    let max_y = min_y + monitor.size().height as i32 - height as i32;
 
-    if let Some(host) = icon_host {
-        return Ok(host);
+    WindowLayout {
+        monitor_index: layout.monitor_index,
+        x: layout.x.clamp(min_x, max_x.max(min_x)),
+        y: layout.y.clamp(min_y, max_y.max(min_y)),
+        width,
+        height,
     }
-
-    unsafe { FindWindowW(w!("Progman"), PCWSTR::null()) }
-        .map_err(|error| format!("无法找到 Windows 桌面宿主：{error}"))
 }
 
-fn class_name(window: HWND) -> String {
-    let mut buffer = [0_u16; 64];
-    let length = unsafe { GetClassNameW(window, &mut buffer) }.max(0) as usize;
-    String::from_utf16_lossy(&buffer[..length])
-}
-
-pub fn attach_to_desktop(
+pub fn show_as_desktop_widget(
     window: &WebviewWindow,
-    screen_x: i32,
-    screen_y: i32,
-    width: u32,
-    height: u32,
-) -> Result<DesktopAttachment, String> {
-    let desktop = desktop_host()?;
-    let handle = window.hwnd().map_err(|error| error.to_string())?;
-
-    unsafe {
-        let style = GetWindowLongPtrW(handle, GWL_STYLE) as u32;
-        SetWindowLongPtrW(
-            handle,
-            GWL_STYLE,
-            ((style & !WS_POPUP.0) | WS_CHILD.0) as isize,
-        );
-
-        let extended_style = GetWindowLongPtrW(handle, GWL_EXSTYLE) as u32;
-        SetWindowLongPtrW(
-            handle,
-            GWL_EXSTYLE,
-            ((extended_style & !WS_EX_APPWINDOW.0) | WS_EX_TOOLWINDOW.0) as isize,
-        );
-
-        // SetParent returns the previous parent, which is null for a top-level window even
-        // when the operation succeeds. Verify the new relationship explicitly instead.
-        let _ = SetParent(handle, Some(desktop));
-        if GetParent(handle).ok() != Some(desktop) {
-            return Err("无法把计划板连接到 Windows 桌面层".into());
-        }
-
-        let mut desktop_rect = RECT::default();
-        GetWindowRect(desktop, &mut desktop_rect)
-            .map_err(|error| format!("无法读取桌面区域：{error}"))?;
-        SetWindowPos(
-            handle,
-            Some(HWND_TOP),
-            screen_x - desktop_rect.left,
-            screen_y - desktop_rect.top,
-            width as i32,
-            height as i32,
-            SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-        )
-        .map_err(|error| format!("无法放置桌面组件：{error}"))?;
-    }
-
+    layout: &WindowLayout,
+) -> Result<(), String> {
+    window
+        .set_always_on_top(false)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_always_on_bottom(true)
+        .map_err(|error| error.to_string())?;
     window
         .set_skip_taskbar(true)
         .map_err(|error| error.to_string())?;
+    window
+        .set_resizable(false)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_position(PhysicalPosition::new(layout.x, layout.y))
+        .map_err(|error| error.to_string())?;
+    window
+        .set_size(PhysicalSize::new(layout.width, layout.height))
+        .map_err(|error| error.to_string())?;
+    window.show().map_err(|error| error.to_string())?;
+    Ok(())
+}
 
-    Ok(DesktopAttachment {
-        host_class: class_name(desktop),
+pub fn show_for_layout_edit(window: &WebviewWindow) -> Result<(), String> {
+    window
+        .set_always_on_bottom(false)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_always_on_top(true)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_skip_taskbar(true)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_resizable(true)
+        .map_err(|error| error.to_string())?;
+    window.show().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+pub fn capture_layout(
+    window: &WebviewWindow,
+    monitor_index: usize,
+) -> Result<WindowLayout, String> {
+    let position = window.outer_position().map_err(|error| error.to_string())?;
+    let size = window.outer_size().map_err(|error| error.to_string())?;
+    Ok(WindowLayout {
+        monitor_index,
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
     })
 }

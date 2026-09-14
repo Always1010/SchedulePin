@@ -36,7 +36,15 @@ export interface MonitorInfo {
 
 export interface DesktopConfiguration {
   attachedWindows: number;
-  hostClass: string;
+  editMode: boolean;
+}
+
+export interface WindowLayout {
+  monitorIndex: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface AppSettings {
@@ -44,4 +52,5 @@ export interface AppSettings {
   opacity: number;
   displayMode: "single" | "all";
   monitorIndex: number;
+  layouts: Record<string, WindowLayout>;
 }
