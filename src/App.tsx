@@ -103,7 +103,7 @@ export default function App() {
   const tasks = useMemo(() => items.filter((item) => item.kind === "task").sort((a, b) => b.priority - a.priority || (a.startTime || "99:99").localeCompare(b.startTime || "99:99")), [items]);
   const disciplines = items.filter((item) => item.kind === "discipline");
   const notes = items.filter((item) => item.kind === "note");
-  const trackable = [...tasks, ...disciplines];
+  const trackable = tasks;
   const completed = trackable.filter((item) => item.completed).length;
   const progress = trackable.length ? Math.round(completed / trackable.length * 100) : 0;
   const focusTasks = tasks.slice(0, 3);
