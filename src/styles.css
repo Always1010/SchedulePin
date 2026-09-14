@@ -28,6 +28,9 @@ button { color: inherit; }
 
 .topbar { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid var(--line); user-select: none; }
 .brand { display: flex; gap: 10px; align-items: center; letter-spacing: -.02em; }
+.brand-copy { display: grid; gap: 1px; }
+.desktop-status { color: var(--muted); font-size: 8px; font-weight: 500; letter-spacing: .02em; }
+.desktop-status.ready { color: #638375; }
 .brand-mark { width: 31px; height: 31px; display: grid; place-items: center; color: #fff; background: #2f413a; border-radius: 10px; box-shadow: 0 7px 18px rgba(42, 60, 53, .2); }
 .topbar-actions { display: flex; gap: 5px; }
 .icon-button { width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; display: grid; place-items: center; cursor: pointer; color: #777a74; }
@@ -139,6 +142,8 @@ main { width: min(880px, calc(100% - 48px)); margin: 0 auto; padding: 42px 0 94p
 .monitor-list button.selected { border-color: #7f9b8e; box-shadow: 0 0 0 2px rgba(111, 144, 129, .1); }
 .monitor-list span { display: grid; flex: 1; gap: 2px; }.monitor-list strong { font-size: 11px; }.monitor-list small { font-size: 9px; color: var(--muted); }.monitor-list i { font-style: normal; width: 22px; height: 18px; border-radius: 4px; color: white; background: #879a91; display: grid; place-items: center; font-size: 9px; }
 .toggle-row { border: 0; background: transparent; padding: 7px 0; width: 100%; display: flex; align-items: center; justify-content: space-between; cursor: pointer; text-align: left; }.toggle-row + .toggle-row { margin-top: 10px; }
+.desktop-mode-info { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 13px; padding: 12px; border-radius: 12px; color: #526e62; background: #e8f0ec; }
+.desktop-mode-info > span { display: grid; gap: 4px; }.desktop-mode-info strong { font-size: 11px; }.desktop-mode-info small { color: #73847c; font-size: 9px; line-height: 1.55; }
 .toggle { width: 36px; height: 21px; border-radius: 20px; padding: 3px; background: #d5d5cf; transition: .2s; }.toggle b { display: block; width: 15px; height: 15px; border-radius: 50%; background: white; transition: .2s; box-shadow: 0 1px 4px rgba(0,0,0,.1); }.toggle.active { background: #759486; }.toggle.active b { transform: translateX(15px); }
 .range-heading { display: flex; justify-content: space-between; font-size: 11px; }.range-heading strong { color: #71897e; }.range { width: 100%; accent-color: #789688; margin-top: 12px; }
 .settings-footnote { margin: 21px 0 0; color: var(--muted); font-size: 9px; line-height: 1.6; }

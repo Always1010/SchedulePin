@@ -3045,6 +3045,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-autostart",
  "tauri-plugin-sql",
+ "windows",
 ]
 
 [[package]]

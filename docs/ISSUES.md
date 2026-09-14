@@ -49,3 +49,13 @@
 - 解决方案：将首版发布目标明确限制为 WiX MSI，保证发布命令的结果与实际交付格式一致。
 - 验证方式：重新运行 `npm run desktop:build`，命令成功退出并生成 `SchedulePin_0.1.0_x64_en-US.msi`。
 - 相关文件：`src-tauri/tauri.conf.json`
+
+## SP-006：多屏模式创建普通应用窗口而非桌面组件
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：用户返回桌面时无法自然看到计划板；选择“全部屏幕”会在任务栏和窗口系统中出现多个普通窗口，其中部分副本不能正常显示。
+- 原因分析：首版仅创建无边框 Tauri 顶层窗口，并通过置顶属性模拟桌面效果，没有把窗口连接到 Windows Shell 的桌面宿主。
+- 解决方案：使用 Win32 API 将每个计划板窗口设为桌面宿主的子窗口，移除普通应用窗口样式、隐藏任务栏入口，并按物理显示器坐标统一创建和放置多屏组件。
+- 验证方式：原生构建启动后，计划板报告“桌面已连接”；窗口父级为承载 `SHELLDLL_DefView` 的 `WorkerW` 或 `Progman`，且主窗口和多屏副本均不出现在任务栏。
+- 相关文件：`src-tauri/src/desktop.rs`、`src-tauri/src/lib.rs`、`src/App.tsx`、`src/components/SettingsPanel.tsx`、`src-tauri/tauri.conf.json`

@@ -34,8 +34,12 @@ export interface MonitorInfo {
   scaleFactor: number;
 }
 
+export interface DesktopConfiguration {
+  attachedWindows: number;
+  hostClass: string;
+}
+
 export interface AppSettings {
-  alwaysOnTop: boolean;
   launchAtStartup: boolean;
   opacity: number;
   displayMode: "single" | "all";

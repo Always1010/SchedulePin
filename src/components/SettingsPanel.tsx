@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Laptop, Monitor, Pin, Power, X } from "lucide-react";
+import { Laptop, Layers3, Monitor, Power, X } from "lucide-react";
 import type { AppSettings, MonitorInfo } from "../types";
 
 interface Props {
@@ -46,10 +46,10 @@ export function SettingsPanel({ open, settings, monitors, onChange, onClose }: P
       </section>
 
       <section className="settings-section">
-        <button className="toggle-row" onClick={() => patch({ alwaysOnTop: !draft.alwaysOnTop })}>
-          <span className="setting-title"><Pin size={17} /><span><strong>悬浮在其他窗口上方</strong><small>关闭时，Win+D 后仍可在桌面看到</small></span></span>
-          <i className={draft.alwaysOnTop ? "toggle active" : "toggle"}><b /></i>
-        </button>
+        <div className="desktop-mode-info">
+          <Layers3 size={18} />
+          <span><strong>桌面组件模式</strong><small>计划板属于桌面层；普通软件会盖住它，返回桌面时会自然出现。</small></span>
+        </div>
         <button className="toggle-row" onClick={() => patch({ launchAtStartup: !draft.launchAtStartup })}>
           <span className="setting-title"><Power size={17} /><span><strong>开机自动启动</strong><small>登录 Windows 后显示今日计划</small></span></span>
           <i className={draft.launchAtStartup ? "toggle active" : "toggle"}><b /></i>

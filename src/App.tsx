@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarCheck, Check, ChevronRight, Clock3, Flame, Focus, GripVertical,
-  ListTodo, Minus, Plus, Settings, Sparkles, StickyNote, Trash2, X,
+  ListTodo, Plus, Settings, Sparkles, StickyNote, Trash2, X,
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { createItem, loadItems, loadSettings, removeItem, saveSettings, setCompleted, todayKey } from "./data";
-import type { AppSettings, MonitorInfo, NewPlanItem, PlanItem } from "./types";
+import type { AppSettings, DesktopConfiguration, MonitorInfo, NewPlanItem, PlanItem } from "./types";
 
 const isTauri = () => "__TAURI_INTERNALS__" in window;
 const compact = new URLSearchParams(location.search).has("panel");
@@ -40,7 +40,9 @@ export default function App() {
   const [addOpen, setAddOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [desktopState, setDesktopState] = useState<DesktopConfiguration | null>(null);
   const [monitors, setMonitors] = useState<MonitorInfo[]>([{ index: 0, name: "当前显示器", x: 0, y: 0, width: screen.width, height: screen.height, scaleFactor: devicePixelRatio }]);
+  const nativeInitialized = useRef(false);
   const today = todayKey();
 
   const refresh = useCallback(async () => {
@@ -56,10 +58,25 @@ export default function App() {
     let unlisten: (() => void) | undefined;
     if (isTauri()) {
       import("@tauri-apps/api/event").then(({ listen }) => listen("schedulepin://data-changed", sync)).then((fn) => { unlisten = fn; });
-      import("@tauri-apps/api/core").then(({ invoke }) => invoke<MonitorInfo[]>("list_monitors")).then(setMonitors).catch(() => {});
     }
     return () => { window.removeEventListener("storage", sync); window.removeEventListener("schedulepin-data", sync); unlisten?.(); };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!isTauri() || nativeInitialized.current) return;
+    nativeInitialized.current = true;
+    const initializeDesktop = async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const available = await invoke<MonitorInfo[]>("list_monitors");
+      setMonitors(available);
+      const result = await invoke<DesktopConfiguration>("configure_windows", { settings: {
+        displayMode: settings.displayMode,
+        monitorIndex: settings.monitorIndex,
+      }});
+      setDesktopState(result);
+    };
+    initializeDesktop().catch((error) => console.warn("Could not connect to desktop", error));
+  }, [settings.displayMode, settings.monitorIndex]);
 
   const broadcast = async () => {
     if (!isTauri()) return;
@@ -93,24 +110,19 @@ export default function App() {
       const [{ invoke }, autostart] = await Promise.all([
         import("@tauri-apps/api/core"), import("@tauri-apps/plugin-autostart"),
       ]);
-      await invoke("configure_windows", { settings: {
-        alwaysOnTop: next.alwaysOnTop,
+      const result = await invoke<DesktopConfiguration>("configure_windows", { settings: {
         displayMode: next.displayMode,
         monitorIndex: next.monitorIndex,
       }});
+      setDesktopState(result);
       const enabled = await autostart.isEnabled();
       if (next.launchAtStartup && !enabled) await autostart.enable();
       if (!next.launchAtStartup && enabled) await autostart.disable();
     } catch (error) { console.warn("Could not apply desktop setting", error); }
   };
 
-  const windowAction = async (action: "minimize" | "quit") => {
+  const quit = async () => {
     if (!isTauri()) return;
-    if (action === "minimize") {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      await getCurrentWindow().minimize();
-      return;
-    }
     const { invoke } = await import("@tauri-apps/api/core");
     await invoke("quit_app");
   };
@@ -125,12 +137,11 @@ export default function App() {
 
   return (
     <div className={compact ? "app compact" : "app"} style={{ "--panel-opacity": settings.opacity } as React.CSSProperties}>
-      <header className="topbar" data-tauri-drag-region>
-        <div className="brand" data-tauri-drag-region><span className="brand-mark"><CalendarCheck size={19} /></span><strong>SchedulePin</strong></div>
+      <header className="topbar">
+        <div className="brand"><span className="brand-mark"><CalendarCheck size={19} /></span><span className="brand-copy"><strong>SchedulePin</strong><small className={desktopState ? "desktop-status ready" : "desktop-status"}>{isTauri() ? desktopState ? `桌面已连接 · ${desktopState.attachedWindows} 屏` : "正在连接桌面…" : "界面预览"}</small></span></div>
         <div className="topbar-actions">
           <button className="icon-button" onClick={() => setSettingsOpen(true)} aria-label="设置"><Settings size={18} /></button>
-          <button className="icon-button" onClick={() => windowAction("minimize")} aria-label="最小化"><Minus size={18} /></button>
-          <button className="icon-button close-control" onClick={() => windowAction("quit")} aria-label="退出"><X size={17} /></button>
+          <button className="icon-button close-control" onClick={quit} aria-label="退出"><X size={17} /></button>
         </div>
       </header>
 

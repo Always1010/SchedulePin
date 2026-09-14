@@ -148,7 +148,6 @@ export async function removeItem(id: string) {
 }
 
 export const defaultSettings: AppSettings = {
-  alwaysOnTop: false,
   launchAtStartup: false,
   opacity: 0.94,
   displayMode: "single",

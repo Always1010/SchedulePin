@@ -14,14 +14,15 @@
       {
         "label": "main",
         "title": "SchedulePin",
-        "width": 760,
-        "height": 820,
+        "width": 440,
+        "height": 760,
         "minWidth": 380,
         "minHeight": 600,
         "decorations": false,
         "transparent": true,
-        "resizable": true,
-        "center": true
+        "resizable": false,
+        "skipTaskbar": true,
+        "visible": false
       }
     ],
     "security": {
