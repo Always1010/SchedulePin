@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "desktop:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 dev",
-    "desktop:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 build"
+    "desktop:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 build",
+    "desktop:build:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 build -NoBundle"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

@@ -1,6 +1,7 @@
 param(
     [ValidateSet("dev", "build")]
-    [string]$Mode = "dev"
+    [string]$Mode = "dev",
+    [switch]$NoBundle
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,7 +44,11 @@ if (-not (Test-Path -LiteralPath $tauriCli)) {
 
 Push-Location $projectRoot
 try {
-    & $tauriCli $Mode
+    $tauriArgs = @($Mode)
+    if ($Mode -eq "build" -and $NoBundle) {
+        $tauriArgs += "--no-bundle"
+    }
+    & $tauriCli @tauriArgs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {

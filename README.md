@@ -32,6 +32,16 @@ npm run dev
 
 ## 构建
 
+只生成免安装测试程序：
+
+```powershell
+npm run desktop:build:portable
+```
+
+程序会生成在 `src-tauri/target/release/schedulepin.exe`。
+
+需要安装程序时再运行：
+
 ```powershell
 npm run desktop:build
 ```
