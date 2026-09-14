@@ -63,21 +63,54 @@ npm run test:local
 
 ## 本地生成助手 Release
 
-不使用 GitHub 或任何云端构建服务时，运行：
+本地 Release 生成的是可以直接双击安装的单文件安装程序，不再交付裸 Helper。依赖准备完成后运行：
 
 ```powershell
 npm run release:local
 ```
 
-这个脚本只测试和构建 Rust 助手，不打包插件、安装脚本或 ZIP。成功后输出目录中只有一个文件：
+脚本先检查依赖，再测试并编译 Rust Helper，最后调用 Inno Setup 打包。成功后输出目录中严格只有一个文件：
 
 ```text
-release\local\schedulepin-helper.exe
+release\local\SchedulePin-Helper-Setup.exe
 ```
 
-本地 Release 需要 PowerShell、Node.js/npm（用于执行 npm 命令）、Rust stable，以及与 Rust 工具链匹配的 C/C++ 链接器。依赖安装完成后，构建过程不需要 GitHub；Rust 第一次下载尚未缓存的依赖时可能需要网络。
+本地构建需要：
 
-仓库中的 GitHub Actions 是以后公开发布时的可选云端流程。它使用 GitHub 临时提供的 Windows Runner，不会调用本机；当前配置只在向 GitHub 推送 `v*` 标签时启动，不影响上述本地命令。
+- PowerShell 5.1 或 PowerShell 7；
+- Rust stable 和与工具链匹配的 C/C++ 链接器；
+- Inno Setup 6；
+- 使用上面的 npm 命令时需要 Node.js/npm，也可以直接运行 `scripts\release-local.ps1`。
+
+缺少 Rust 或 Inno Setup 时，脚本会说明缺少的依赖后停止，不会自动修改或安装本机软件。因此可以先保留脚本，等需要本机构建时再安装依赖。
+
+## 使用 GitHub Standard Runner 构建
+
+仓库的 `Build Helper Installer` 工作流使用 GitHub 提供的 `windows-2022` Standard Runner，不需要自己的服务器。远程构建和本地构建调用同一个 `scripts\release-local.ps1`，并在上传前静默安装、检查注册表、卸载，以验证安装程序的完整流程。
+
+### 手动测试构建
+
+工作流进入 GitHub 默认分支后：
+
+1. 打开仓库的 `Actions` 页面；
+2. 在左侧选择 `Build Helper Installer`；
+3. 点击 `Run workflow`；
+4. 构建完成后，在该次运行页面的 `Artifacts` 下载 `SchedulePin-Helper-Setup`。
+
+手动构建产物保留 14 天，不会创建正式 GitHub Release。
+
+### 正式版本发布
+
+确认 `package.json` 中的版本号后，推送相同版本的 `v*` 标签，例如：
+
+```powershell
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+标签版本与 `package.json` 不一致时工作流会停止。验证成功后，GitHub Release 只包含 `SchedulePin-Helper-Setup.exe`。
+
+当前安装程序尚未配置商业代码签名证书，因此 Windows 可能显示“未知发布者”或 SmartScreen 提醒；这不影响安装流程。面向公开用户发布前，可以再为工作流接入可信代码签名。
 
 ## 测试桌面壁纸功能
 
@@ -95,22 +128,14 @@ npm run helper:smoke
 native-helper\target\release\schedulepin-helper.exe
 ```
 
-它现在就在本机项目目录中，不需要服务器。设置页提供 [GitHub Releases](https://github.com/Always1010/SchedulePin/releases) 入口；推送 `v*` 标签后，自动发布流程会生成插件 ZIP、Windows 助手 ZIP 和 SHA-256 校验文件。
+它现在就在本机项目目录中，不需要服务器，但裸 EXE 只供开发和打包，不是最终安装入口。设置页提供 [GitHub Releases](https://github.com/Always1010/SchedulePin/releases) 入口；正式发布后，下载并双击 `SchedulePin-Helper-Setup.exe` 即可。安装程序会：
 
-然后从 `chrome://extensions` 或 `edge://extensions` 复制 SchedulePin 的 32 位扩展 ID，运行：
-
-```powershell
-npm run helper:install -- -ExtensionId 这里替换成扩展ID
-```
-
-安装脚本会：
-
-- 把助手复制到 `%LOCALAPPDATA%\SchedulePin`；
+- 把助手安装到 `%LOCALAPPDATA%\Programs\SchedulePin Helper`；
 - 为 Chrome 和 Edge 注册 `com.schedulepin.helper`；
-- 只允许传入的扩展 ID 连接；
+- 使用内置的固定扩展 ID 安全白名单，不要求复制或填写 ID；
 - 注册当前用户开机启动的无窗口刷新进程。
 
-安装后在扩展管理页重新加载 SchedulePin。打开 SchedulePin 设置并点击重新检测，显示“桌面助手已连接”后即可启用桌面计划。
+安装不需要管理员权限。完成后在扩展管理页重新加载 SchedulePin，打开设置并点击重新检测；显示“桌面助手已连接”后即可启用桌面计划。
 
 ## 桌面布局和恢复
 
@@ -120,7 +145,9 @@ npm run helper:install -- -ExtensionId 这里替换成扩展ID
 
 - 关闭“显示桌面计划”：恢复原壁纸，保留助手和任务。
 - 点击“恢复启用前的原壁纸”：立即恢复，同时把桌面展示开关关闭。
-- 运行卸载脚本：先恢复壁纸，再注销 Native Messaging 和开机启动。
+- 从 Windows“设置 → 应用 → 已安装的应用”卸载正式安装版：先恢复壁纸，再注销 Native Messaging 和开机启动。
+
+使用 `npm run test:local` 注册的开发版助手仍通过下面的命令卸载：
 
 ```powershell
 npm run helper:uninstall

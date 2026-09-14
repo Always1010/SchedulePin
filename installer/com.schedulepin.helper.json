@@ -1,0 +1,9 @@
+{
+  "name": "com.schedulepin.helper",
+  "description": "SchedulePin optional Windows wallpaper helper",
+  "path": "schedulepin-helper.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://dhlpgdmpmcenijihielpijhmjnjmcboi/"
+  ]
+}

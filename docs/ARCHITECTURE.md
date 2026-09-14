@@ -47,9 +47,10 @@ SchedulePin 不再把可交互 WebView 窗口伪装成桌面组件。产品拆�
 | Windows `IDesktopWallpaper` | 逐屏读取、应用和恢复壁纸 |
 | 助手状态缓存 | 浏览器关闭后保留最后一次计划快照和原壁纸信息 |
 | `dnd-kit` | 提供跟随指针、相邻任务让位和键盘可访问的排序交互 |
-| GitHub Actions / Releases | 按版本标签构建插件、Windows 助手与校验文件 |
+| GitHub Actions / Releases | 使用 Standard Windows Runner 手动构建或按版本标签发布 Helper 安装程序 |
 | 固定开发扩展 ID | 通过 `manifest.key` 保持本地测试 ID 稳定，安装脚本无需用户传参 |
-| 本地测试与 Release 脚本 | 不依赖 GitHub，启动隔离 Edge 测试环境或只产出助手 EXE |
+| Inno Setup | 把 Helper、Native Messaging 注册、开机启动和安全卸载封装为单文件安装程序 |
+| 共用 Release 脚本 | 本地和 GitHub 调用相同入口，只产出 `SchedulePin-Helper-Setup.exe` |
 
 ## 3. 运行架构
 
@@ -136,12 +137,13 @@ Windows 每块显示器的桌面壁纸
 
 ### 插件 + 助手
 
-- 助手安装在 `%LOCALAPPDATA%\SchedulePin`；
+- 安装程序本体与助手安装在 `%LOCALAPPDATA%\Programs\SchedulePin Helper`；
+- 运行状态、生成壁纸和原壁纸备份保存在 `%LOCALAPPDATA%\SchedulePin`；
 - Native Messaging 清单只允许指定的扩展 ID 访问；
 - 插件检测成功后解锁桌面设置；
-- 助手安装包在开发阶段保存在本地，发布阶段可以托管到 GitHub Releases。
+- 单文件安装包可由本地脚本或 GitHub Standard Runner 构建，正式版本托管到 GitHub Releases。
 
-开发版原文件位于 `native-helper/target/release/schedulepin-helper.exe`，安装脚本把它复制到 `%LOCALAPPDATA%/SchedulePin`。项目目前不依赖下载服务器，也不会在插件中提供指向不存在地址的下载按钮。
+开发版原文件位于 `native-helper/target/release/schedulepin-helper.exe`；本地完整联调仍使用开发安装脚本。正式交付只提供 `SchedulePin-Helper-Setup.exe`，用户无需接触裸 Helper、注册脚本或扩展 ID。项目不依赖自建下载服务器，GitHub Releases 保存正式安装程序。
 
 ## 8. 安全边界
 
@@ -167,4 +169,4 @@ Windows 每块显示器的桌面壁纸
 
 - 旧 Tauri / SQLite 原型数据不自动迁移；浏览器插件从自己的本地存储开始工作。
 - 原壁纸恢复覆盖逐屏图片、壁纸位置模式和背景色；Windows 壁纸轮播会恢复为启用当时捕获的静态图片，不会自动重新启动轮播。
-- 当前为开发者加载版本，插件和助手都从本地构建产物安装；正式下载入口留到 GitHub Releases 发布阶段。
+- 当前插件仍以开发者加载方式使用；助手已具备本地与 GitHub 共用的单文件安装程序构建流程。
