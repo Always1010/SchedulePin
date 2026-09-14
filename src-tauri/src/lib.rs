@@ -115,7 +115,6 @@ fn configure_windows(
                 .transparent(true)
                 .skip_taskbar(true)
                 .resizable(false)
-                .always_on_bottom(true)
                 .visible(false)
                 .inner_size(
                     layout.width as f64 / monitor.scale_factor(),

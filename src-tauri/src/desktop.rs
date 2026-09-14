@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 use tauri::{Monitor, PhysicalPosition, PhysicalSize, WebviewWindow};
+use windows::{
+    core::{w, PCWSTR},
+    Win32::UI::WindowsAndMessaging::{FindWindowW, SetWindowLongPtrW, GWLP_HWNDPARENT},
+};
 
 pub const MIN_WIDTH: u32 = 360;
 pub const MIN_HEIGHT: u32 = 420;
@@ -57,7 +61,7 @@ pub fn show_as_desktop_widget(
         .set_always_on_top(false)
         .map_err(|error| error.to_string())?;
     window
-        .set_always_on_bottom(true)
+        .set_always_on_bottom(false)
         .map_err(|error| error.to_string())?;
     window
         .set_skip_taskbar(true)
@@ -71,7 +75,21 @@ pub fn show_as_desktop_widget(
     window
         .set_size(PhysicalSize::new(layout.width, layout.height))
         .map_err(|error| error.to_string())?;
+    bind_to_desktop_owner(window)?;
     window.show().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn bind_to_desktop_owner(window: &WebviewWindow) -> Result<(), String> {
+    let desktop = unsafe { FindWindowW(w!("Progman"), PCWSTR::null()) }
+        .map_err(|error| format!("无法找到 Windows 桌面窗口：{error}"))?;
+    let handle = window.hwnd().map_err(|error| error.to_string())?;
+
+    // Keeping the WebView as a top-level owned window preserves physical monitor
+    // coordinates and native resizing, while ensuring it stays above the wallpaper.
+    unsafe {
+        SetWindowLongPtrW(handle, GWLP_HWNDPARENT, desktop.0 as isize);
+    }
     Ok(())
 }
 
