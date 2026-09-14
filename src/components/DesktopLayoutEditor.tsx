@@ -1,0 +1,85 @@
+import { useRef } from "react";
+import type { DesktopLayout, MonitorInfo } from "../types";
+
+interface Props {
+  monitor: MonitorInfo;
+  layout: DesktopLayout;
+  opacity: number;
+  onChange: (layout: DesktopLayout) => void;
+}
+
+type Gesture = {
+  mode: "move" | "resize";
+  startX: number;
+  startY: number;
+  layout: DesktopLayout;
+} | null;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+export const defaultDesktopLayout: DesktopLayout = { x: 0.68, y: 0.06, width: 0.28, height: 0.82 };
+
+export function DesktopLayoutEditor({ monitor, layout, opacity, onChange }: Props) {
+  const surface = useRef<HTMLDivElement>(null);
+  const gesture = useRef<Gesture>(null);
+
+  const begin = (event: React.PointerEvent<HTMLElement>, mode: "move" | "resize") => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    gesture.current = { mode, startX: event.clientX, startY: event.clientY, layout };
+  };
+
+  const move = (event: React.PointerEvent<HTMLDivElement>) => {
+    const current = gesture.current;
+    const bounds = surface.current?.getBoundingClientRect();
+    if (!current || !bounds) return;
+    const dx = (event.clientX - current.startX) / bounds.width;
+    const dy = (event.clientY - current.startY) / bounds.height;
+
+    if (current.mode === "move") {
+      onChange({
+        ...current.layout,
+        x: clamp(current.layout.x + dx, 0, 1 - current.layout.width),
+        y: clamp(current.layout.y + dy, 0, 1 - current.layout.height),
+      });
+    } else {
+      onChange({
+        ...current.layout,
+        width: clamp(current.layout.width + dx, 0.18, 1 - current.layout.x),
+        height: clamp(current.layout.height + dy, 0.28, 1 - current.layout.y),
+      });
+    }
+  };
+
+  return (
+    <div className="desktop-designer">
+      <div className="designer-label"><span>{monitor.name}</span><small>{monitor.width} × {monitor.height}</small></div>
+      <div
+        ref={surface}
+        className="monitor-preview"
+        style={{ aspectRatio: `${monitor.width} / ${monitor.height}` }}
+        onPointerMove={move}
+        onPointerUp={() => { gesture.current = null; }}
+        onPointerCancel={() => { gesture.current = null; }}
+      >
+        <div className="preview-wallpaper-glow" />
+        <div
+          className="preview-plan-card"
+          style={{
+            left: `${layout.x * 100}%`, top: `${layout.y * 100}%`,
+            width: `${layout.width * 100}%`, height: `${layout.height * 100}%`,
+            opacity,
+          }}
+          onPointerDown={(event) => begin(event, "move")}
+        >
+          <strong>SchedulePin</strong>
+          <span>今天 · 3 项计划</span>
+          <i /><i /><i />
+          <b className="preview-resize" onPointerDown={(event) => begin(event, "resize")} />
+        </div>
+      </div>
+      <p>拖动计划卡片移动位置，拖动右下角调整大小。这里的变化会按比例应用到真实显示器。</p>
+    </div>
+  );
+}

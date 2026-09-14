@@ -1,9 +1,9 @@
 import type { AppSettings, NewPlanItem, PlanItem } from "./types";
 
-const ITEMS_KEY = "schedulepin.items.v1";
-const SETTINGS_KEY = "schedulepin.settings.v1";
+export const ITEMS_KEY = "schedulepin.items.v2";
+export const SETTINGS_KEY = "schedulepin.settings.v2";
 
-const isTauri = () => "__TAURI_INTERNALS__" in window;
+const hasExtensionStorage = () => typeof chrome !== "undefined" && Boolean(chrome.storage?.local);
 
 const toDateKey = (date = new Date()) => {
   const year = date.getFullYear();
@@ -36,134 +36,87 @@ const starterItems = (): PlanItem[] => {
   ];
 };
 
-const readLocal = (): PlanItem[] => {
-  const raw = localStorage.getItem(ITEMS_KEY);
-  if (raw) return JSON.parse(raw) as PlanItem[];
+async function readValue<T>(key: string): Promise<T | null> {
+  if (hasExtensionStorage()) {
+    const result = await chrome.storage.local.get(key);
+    return (result[key] as T | undefined) ?? null;
+  }
+  const raw = localStorage.getItem(key);
+  return raw ? JSON.parse(raw) as T : null;
+}
+
+async function writeValue<T>(key: string, value: T): Promise<void> {
+  if (hasExtensionStorage()) {
+    await chrome.storage.local.set({ [key]: value });
+  } else {
+    localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new Event("schedulepin-storage"));
+  }
+}
+
+async function allItems(): Promise<PlanItem[]> {
+  const stored = await readValue<PlanItem[]>(ITEMS_KEY);
+  if (stored) return stored;
   const initial = starterItems();
-  localStorage.setItem(ITEMS_KEY, JSON.stringify(initial));
+  await writeValue(ITEMS_KEY, initial);
   return initial;
-};
-
-const writeLocal = (items: PlanItem[]) => {
-  localStorage.setItem(ITEMS_KEY, JSON.stringify(items));
-};
-
-async function database() {
-  const { default: Database } = await import("@tauri-apps/plugin-sql");
-  return Database.load("sqlite:schedulepin.db");
 }
 
 export async function loadItems(date = todayKey()): Promise<PlanItem[]> {
-  if (!isTauri()) {
-    return readLocal().filter(
-      (item) => item.scheduledDate === date || item.recurringDaily,
-    );
-  }
-
-  const db = await database();
-  const rows = await db.select<Array<Record<string, unknown>>>(
-    `SELECT i.*, COALESCE(c.completed, 0) AS completed
-     FROM plan_items i
-     LEFT JOIN item_completions c ON c.item_id = i.id AND c.day = $1
-     WHERE i.scheduled_date = $1 OR i.recurring_daily = 1
-     ORDER BY i.sort_order, i.created_at`,
-    [date],
-  );
-
-  if (rows.length === 0) {
-    for (const item of starterItems()) await insertItem(item);
-    return loadItems(date);
-  }
-
-  return rows.map((row) => ({
-    id: String(row.id),
-    kind: row.kind as PlanItem["kind"],
-    title: String(row.title),
-    scheduledDate: String(row.scheduled_date),
-    startTime: row.start_time ? String(row.start_time) : null,
-    endTime: row.end_time ? String(row.end_time) : null,
-    priority: Number(row.priority),
-    recurringDaily: Boolean(row.recurring_daily),
-    sortOrder: Number(row.sort_order),
-    completed: Boolean(row.completed),
-    createdAt: String(row.created_at),
-  }));
+  return (await allItems()).filter((item) => item.scheduledDate === date || item.recurringDaily);
 }
 
-async function insertItem(item: PlanItem) {
-  if (!isTauri()) {
-    const items = readLocal();
-    writeLocal([...items, item]);
-    return;
-  }
-  const db = await database();
-  await db.execute(
-    `INSERT OR IGNORE INTO plan_items
-      (id, kind, title, scheduled_date, start_time, end_time, priority, recurring_daily, sort_order, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [item.id, item.kind, item.title, item.scheduledDate, item.startTime, item.endTime,
-      item.priority, item.recurringDaily ? 1 : 0, item.sortOrder, item.createdAt],
-  );
+export async function loadAllItems(): Promise<PlanItem[]> {
+  return allItems();
 }
 
 export async function createItem(input: NewPlanItem): Promise<PlanItem> {
-  const existing = await loadItems(input.scheduledDate);
+  const items = await allItems();
   const item: PlanItem = {
-    id: crypto.randomUUID(),
-    kind: input.kind,
-    title: input.title.trim(),
-    scheduledDate: input.scheduledDate,
-    startTime: input.startTime || null,
-    endTime: input.endTime || null,
-    priority: input.priority ?? (input.kind === "task" ? 2 : 0),
+    id: crypto.randomUUID(), kind: input.kind, title: input.title.trim(),
+    scheduledDate: input.scheduledDate, startTime: input.startTime || null,
+    endTime: input.endTime || null, priority: input.priority ?? (input.kind === "task" ? 2 : 0),
     recurringDaily: input.recurringDaily ?? input.kind === "discipline",
-    sortOrder: existing.length,
-    completed: false,
-    createdAt: new Date().toISOString(),
+    sortOrder: items.length, completed: false, createdAt: new Date().toISOString(),
   };
-  await insertItem(item);
+  await writeValue(ITEMS_KEY, [...items, item]);
   return item;
 }
 
-export async function setCompleted(id: string, day: string, completed: boolean) {
-  if (!isTauri()) {
-    writeLocal(readLocal().map((item) => item.id === id ? { ...item, completed } : item));
-    return;
-  }
-  const db = await database();
-  await db.execute(
-    `INSERT INTO item_completions (item_id, day, completed) VALUES ($1,$2,$3)
-     ON CONFLICT(item_id, day) DO UPDATE SET completed = excluded.completed`,
-    [id, day, completed ? 1 : 0],
-  );
+export async function setCompleted(id: string, _day: string, completed: boolean) {
+  const items = await allItems();
+  await writeValue(ITEMS_KEY, items.map((item) => item.id === id ? { ...item, completed } : item));
 }
 
 export async function removeItem(id: string) {
-  if (!isTauri()) {
-    writeLocal(readLocal().filter((item) => item.id !== id));
-    return;
-  }
-  const db = await database();
-  await db.execute("DELETE FROM plan_items WHERE id = $1", [id]);
+  await writeValue(ITEMS_KEY, (await allItems()).filter((item) => item.id !== id));
 }
 
 export const defaultSettings: AppSettings = {
-  launchAtStartup: false,
   opacity: 0.86,
   displayMode: "single",
-  monitorIndex: 0,
+  selectedMonitorId: null,
+  desktopEnabled: false,
   layouts: {},
 };
 
-export function loadSettings(): AppSettings {
-  try {
-    return { ...defaultSettings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
-  } catch {
-    return defaultSettings;
-  }
+export async function loadSettings(): Promise<AppSettings> {
+  const stored = await readValue<Partial<AppSettings>>(SETTINGS_KEY);
+  return { ...defaultSettings, ...(stored ?? {}), layouts: stored?.layouts ?? {} };
 }
 
-export function saveSettings(settings: AppSettings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  window.dispatchEvent(new Event("schedulepin-settings"));
+export async function saveSettings(settings: AppSettings) {
+  await writeValue(SETTINGS_KEY, settings);
+}
+
+export function subscribeStorage(listener: () => void): () => void {
+  if (hasExtensionStorage()) {
+    const callback = (changes: Record<string, chrome.storage.StorageChange>) => {
+      if (changes[ITEMS_KEY] || changes[SETTINGS_KEY]) listener();
+    };
+    chrome.storage.onChanged.addListener(callback);
+    return () => chrome.storage.onChanged.removeListener(callback);
+  }
+  window.addEventListener("schedulepin-storage", listener);
+  return () => window.removeEventListener("schedulepin-storage", listener);
 }

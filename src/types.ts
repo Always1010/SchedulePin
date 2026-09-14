@@ -25,22 +25,17 @@ export interface NewPlanItem {
 }
 
 export interface MonitorInfo {
+  id: string;
   index: number;
   name: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  scaleFactor: number;
+  primary: boolean;
 }
 
-export interface DesktopConfiguration {
-  attachedWindows: number;
-  editMode: boolean;
-}
-
-export interface WindowLayout {
-  monitorIndex: number;
+export interface DesktopLayout {
   x: number;
   y: number;
   width: number;
@@ -48,9 +43,26 @@ export interface WindowLayout {
 }
 
 export interface AppSettings {
-  launchAtStartup: boolean;
   opacity: number;
   displayMode: "single" | "all";
-  monitorIndex: number;
-  layouts: Record<string, WindowLayout>;
+  selectedMonitorId: string | null;
+  desktopEnabled: boolean;
+  layouts: Record<string, DesktopLayout>;
+}
+
+export interface HelperStatus {
+  connected: boolean;
+  version?: string;
+  desktopEnabled?: boolean;
+  lastSync?: string | null;
+  monitors: MonitorInfo[];
+  error?: string;
+}
+
+export interface DesktopSnapshot {
+  protocolVersion: 1;
+  date: string;
+  generatedAt: string;
+  items: PlanItem[];
+  settings: AppSettings;
 }

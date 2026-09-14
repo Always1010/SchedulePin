@@ -1,22 +1,29 @@
-import { useEffect, useState } from "react";
-import { EyeOff, Laptop, Layers3, LogOut, Monitor, Move, Power, RotateCcw, X } from "lucide-react";
-import type { AppSettings, MonitorInfo } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import { Check, Laptop, Monitor, RefreshCw, RotateCcw, Unplug, X } from "lucide-react";
+import type { AppSettings, HelperStatus, MonitorInfo } from "../types";
+import { defaultDesktopLayout, DesktopLayoutEditor } from "./DesktopLayoutEditor";
 
 interface Props {
   open: boolean;
   settings: AppSettings;
-  monitors: MonitorInfo[];
+  helper: HelperStatus;
   onChange: (settings: AppSettings) => void;
-  onBeginLayout: () => void;
-  onResetLayout: () => void;
-  onHide: () => void;
-  onQuit: () => void;
+  onRefreshHelper: () => void;
+  onRestoreWallpaper: () => void;
   onClose: () => void;
 }
 
-export function SettingsPanel({ open, settings, monitors, onChange, onBeginLayout, onResetLayout, onHide, onQuit, onClose }: Props) {
+const previewMonitor: MonitorInfo = {
+  id: "preview", index: 0, name: "显示器预览", x: 0, y: 0,
+  width: 1920, height: 1080, primary: true,
+};
+
+export function SettingsPanel({ open, settings, helper, onChange, onRefreshHelper, onRestoreWallpaper, onClose }: Props) {
   const [draft, setDraft] = useState(settings);
   useEffect(() => setDraft(settings), [settings, open]);
+
+  const monitors = helper.monitors.length ? helper.monitors : [previewMonitor];
+  const activeMonitor = useMemo(() => monitors.find((monitor) => monitor.id === draft.selectedMonitorId) ?? monitors[0], [monitors, draft.selectedMonitorId]);
   if (!open) return null;
 
   const patch = (next: Partial<AppSettings>) => {
@@ -24,61 +31,60 @@ export function SettingsPanel({ open, settings, monitors, onChange, onBeginLayou
     setDraft(value);
     onChange(value);
   };
+  const layout = draft.layouts[activeMonitor.id] ?? defaultDesktopLayout;
 
   return (
-    <aside className="settings-panel">
+    <aside className="settings-panel extension-settings">
       <div className="settings-heading">
-        <div><span className="eyebrow">SchedulePin</span><h2>桌面设置</h2></div>
+        <div><span className="eyebrow">SchedulePin</span><h2>设置</h2></div>
         <button className="icon-button" onClick={onClose} aria-label="关闭"><X size={18} /></button>
       </div>
 
       <section className="settings-section">
-        <div className="setting-title"><Monitor size={17} /><div><strong>显示位置</strong><small>选择计划板出现在哪块屏幕</small></div></div>
-        <div className="segmented">
-          <button className={draft.displayMode === "single" ? "active" : ""} onClick={() => patch({ displayMode: "single" })}>指定屏幕</button>
-          <button className={draft.displayMode === "all" ? "active" : ""} onClick={() => patch({ displayMode: "all" })}>全部屏幕</button>
+        <div className={helper.connected ? "helper-card connected" : "helper-card"}>
+          <span className="helper-icon">{helper.connected ? <Check size={17} /> : <Unplug size={17} />}</span>
+          <span><strong>{helper.connected ? "桌面助手已连接" : "浏览器独立模式"}</strong><small>{helper.connected ? `版本 ${helper.version ?? "未知"} · ${helper.monitors.length} 块显示器` : "任务管理可以正常使用；桌面壁纸功能需要可选助手。"}</small></span>
+          <button onClick={onRefreshHelper} aria-label="重新检测"><RefreshCw size={14} /></button>
         </div>
+        {!helper.connected && <p className="install-hint">安装桌面助手后，这里会自动解锁 Windows 壁纸同步。开发版请先运行项目提供的助手安装脚本。</p>}
+      </section>
+
+      <section className="settings-section">
+        <button className="toggle-row" disabled={!helper.connected} onClick={() => patch({ desktopEnabled: !draft.desktopEnabled })}>
+          <span className="setting-title"><Monitor size={17} /><span><strong>显示桌面计划</strong><small>生成壁纸，不创建任何桌面窗口</small></span></span>
+          <i className={draft.desktopEnabled ? "toggle active" : "toggle"}><b /></i>
+        </button>
+
+        <div className="segmented">
+          <button disabled={!helper.connected} className={draft.displayMode === "single" ? "active" : ""} onClick={() => patch({ displayMode: "single" })}>指定屏幕</button>
+          <button disabled={!helper.connected} className={draft.displayMode === "all" ? "active" : ""} onClick={() => patch({ displayMode: "all" })}>全部屏幕</button>
+        </div>
+
         <div className="monitor-list">
           {monitors.map((monitor) => (
-            <button key={monitor.index} className={draft.monitorIndex === monitor.index ? "selected" : ""} onClick={() => patch({ monitorIndex: monitor.index })}>
-              <Laptop size={18} />
-              <span><strong>{monitor.name || `显示器 ${monitor.index + 1}`}</strong><small>{monitor.width} × {monitor.height} · {Math.round(monitor.scaleFactor * 100)}%</small></span>
+            <button key={monitor.id} disabled={!helper.connected} className={activeMonitor.id === monitor.id ? "selected" : ""} onClick={() => patch({ selectedMonitorId: monitor.id })}>
+              <Laptop size={17} />
+              <span><strong>{monitor.name}</strong><small>{monitor.width} × {monitor.height}{monitor.primary ? " · 主屏幕" : ""}</small></span>
               <i>{monitor.index + 1}</i>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="settings-section">
-        <div className="desktop-mode-info">
-          <Layers3 size={18} />
-          <span><strong>桌面显示模式</strong><small>组件保持在普通窗口下方，不占任务栏；回到桌面时自然出现。</small></span>
-        </div>
-        <button className="toggle-row" onClick={() => patch({ launchAtStartup: !draft.launchAtStartup })}>
-          <span className="setting-title"><Power size={17} /><span><strong>开机自动启动</strong><small>登录 Windows 后显示今日计划</small></span></span>
-          <i className={draft.launchAtStartup ? "toggle active" : "toggle"}><b /></i>
-        </button>
+      <section className="settings-section designer-section">
+        <div className="setting-title"><Monitor size={17} /><div><strong>壁纸布局</strong><small>在浏览器里完成移动和缩放</small></div></div>
+        <DesktopLayoutEditor
+          monitor={activeMonitor}
+          layout={layout}
+          opacity={draft.opacity}
+          onChange={(next) => patch({ layouts: { ...draft.layouts, [activeMonitor.id]: next } })}
+        />
+        <div className="range-heading"><span>计划卡片不透明度</span><strong>{Math.round(draft.opacity * 100)}%</strong></div>
+        <input className="range" type="range" min="0.35" max="1" step="0.01" value={draft.opacity} onChange={(event) => patch({ opacity: Number(event.target.value) })} />
       </section>
 
-      <section className="settings-section">
-        <div className="setting-title"><Move size={17} /><div><strong>位置和大小</strong><small>每块屏幕可保存独立布局</small></div></div>
-        <div className="layout-actions">
-          <button className="settings-primary" onClick={onBeginLayout}><Move size={15} />进入布局编辑</button>
-          <button className="settings-secondary" onClick={onResetLayout}><RotateCcw size={14} />恢复默认</button>
-        </div>
-        <p className="settings-help">进入后可拖动顶部移动组件，也可以拖动边缘和四角调整大小。</p>
-      </section>
-
-      <section className="settings-section">
-        <div className="range-heading"><span>面板不透明度</span><strong>{Math.round(draft.opacity * 100)}%</strong></div>
-        <input className="range" type="range" min="0.2" max="1" step="0.01" value={draft.opacity} onChange={(e) => patch({ opacity: Number(e.target.value) })} />
-      </section>
-
-      <div className="settings-window-actions">
-        <button onClick={onHide}><EyeOff size={15} />隐藏组件</button>
-        <button className="danger" onClick={onQuit}><LogOut size={15} />退出程序</button>
-      </div>
-      <p className="settings-footnote">所有数据保存在本机。第一版不需要账号，也不会上传任务内容。</p>
+      <button className="restore-wallpaper" disabled={!helper.connected} onClick={onRestoreWallpaper}><RotateCcw size={15} />恢复启用前的原壁纸</button>
+      <p className="settings-footnote">任务保存在浏览器本地。本地助手只接收用于生成壁纸的快照，不负责修改任务。</p>
     </aside>
   );
 }

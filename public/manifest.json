@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "SchedulePin",
+  "description": "在新标签页安排今天，并可选同步为 Windows 桌面计划壁纸。",
+  "version": "0.2.0",
+  "permissions": ["storage", "sidePanel", "nativeMessaging", "alarms"],
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "side_panel": {
+    "default_path": "index.html?view=sidepanel"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "打开 SchedulePin 侧边栏",
+    "default_icon": {
+      "32": "icons/32x32.png",
+      "128": "icons/128x128.png"
+    }
+  },
+  "icons": {
+    "32": "icons/32x32.png",
+    "128": "icons/128x128.png"
+  }
+}
