@@ -1,22 +1,25 @@
 [package]
-name = "schedulepin"
-version = "0.1.0"
-description = "把今天真正重要的事钉在桌面上"
+name = "schedulepin-helper"
+version = "0.2.0"
+description = "SchedulePin 可选 Windows 壁纸助手"
 authors = ["SchedulePin"]
 edition = "2021"
 
 [lib]
-name = "schedulepin_lib"
+name = "schedulepin_helper"
 crate-type = ["rlib"]
 
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
-
 [dependencies]
+base64 = "0.22"
+chrono = { version = "0.4", features = ["clock", "serde"] }
+resvg = { version = "0.45", features = ["text", "system-fonts", "raster-images"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri = { version = "2", features = ["tray-icon"] }
-tauri-plugin-autostart = "2"
-tauri-plugin-single-instance = "2"
-tauri-plugin-sql = { version = "2", features = ["sqlite"] }
-windows = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  "Win32_UI_Shell"
+] }
+
+[dev-dependencies]
+tempfile = "3"
