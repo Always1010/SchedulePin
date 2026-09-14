@@ -1,0 +1,64 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build browser extension
+        run: npm run build
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test and build Windows helper
+        shell: pwsh
+        run: |
+          cargo test --manifest-path native-helper/Cargo.toml
+          cargo build --release --manifest-path native-helper/Cargo.toml
+
+      - name: Package release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          Compress-Archive -Path dist/* -DestinationPath release/SchedulePin-extension.zip
+
+          $helperRoot = "release/helper-package"
+          New-Item -ItemType Directory -Path "$helperRoot/native-helper/target/release" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$helperRoot/scripts" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$helperRoot/docs" -Force | Out-Null
+          Copy-Item native-helper/target/release/schedulepin-helper.exe "$helperRoot/native-helper/target/release/"
+          Copy-Item scripts/install-helper.ps1,scripts/uninstall-helper.ps1 "$helperRoot/scripts/"
+          Copy-Item docs/HELPER_INSTALL.md "$helperRoot/docs/"
+          Compress-Archive -Path "$helperRoot/*" -DestinationPath release/SchedulePin-Helper-Windows.zip
+          Remove-Item -LiteralPath $helperRoot -Recurse -Force
+
+          Get-ChildItem release/*.zip | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)" | Add-Content release/checksums.txt
+          }
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" release/* --generate-notes --title "SchedulePin ${{ github.ref_name }}"

@@ -447,6 +447,12 @@ main::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(86, 93, 83,
 .field-help { display: block; margin-top: 8px; color: var(--muted); font-size: 9px; }
 .desktop-settings-card { grid-column: 1 / -1; }
 .desktop-settings-card .helper-card { margin-bottom: 17px; }
+.release-download-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; margin: -7px 0 18px; padding: 13px; border: 1px solid rgba(190,104,86,.12); border-radius: 13px; background: rgba(246,231,225,.72); }
+.release-download-card > span { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px; color: #ae6252; background: rgba(255,255,255,.64); }
+.release-download-card > div { display: grid; gap: 3px; }
+.release-download-card strong { font-size: 11px; }.release-download-card small { color: var(--muted); font-size: 9px; }
+.release-download-card a { display: flex; align-items: center; gap: 5px; padding: 8px 10px; border-radius: 9px; color: white; background: #bd6e5d; text-decoration: none; font-size: 9px; }
+.theme-dark .release-download-card { border-color: rgba(221,137,111,.16); background: rgba(111,65,54,.2); }
 .desktop-settings-card .monitor-list { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
 .desktop-page-designer { width: min(620px, 100%); margin: 20px auto 0; }
 .desktop-page-designer .monitor-preview { max-height: 350px; }

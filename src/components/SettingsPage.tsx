@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlignJustify, ArrowLeft, Check, Laptop, Monitor, Palette,
+  AlignJustify, ArrowLeft, Check, Download, ExternalLink, Laptop, Monitor, Palette,
   RefreshCw, RotateCcw, Type, Unplug,
 } from "lucide-react";
 import type { AppSettings, HelperStatus, MonitorInfo } from "../types";
@@ -33,6 +33,8 @@ const fonts: Array<{ value: AppSettings["fontFamily"]; label: string; sample: st
   { value: "reading", label: "阅读型", sample: "Aa 计划" },
   { value: "rounded", label: "圆润", sample: "Aa 计划" },
 ];
+
+const releasesUrl = "https://github.com/Always1010/SchedulePin/releases";
 
 export function SettingsPage({ settings, helper, onChange, onRefreshHelper, onRestoreWallpaper, onBack }: Props) {
   const [draft, setDraft] = useState(settings);
@@ -106,6 +108,13 @@ export function SettingsPage({ settings, helper, onChange, onRefreshHelper, onRe
             <span><strong>{helper.connected ? "桌面助手已连接" : "浏览器独立模式"}</strong><small>{helper.connected ? `版本 ${helper.version ?? "未知"} · ${helper.monitors.length} 块显示器` : "To-Do 可以独立使用；桌面壁纸需要本地助手。"}</small></span>
             <button onClick={onRefreshHelper} aria-label="重新检测"><RefreshCw size={14} /></button>
           </div>
+          {!helper.connected && (
+            <div className="release-download-card">
+              <span><Download size={17} /></span>
+              <div><strong>下载 Windows 桌面助手</strong><small>从 GitHub Releases 获取最新版助手和安装说明。</small></div>
+              <a href={releasesUrl} target="_blank" rel="noreferrer">打开 Release <ExternalLink size={13} /></a>
+            </div>
+          )}
 
           <button className="toggle-row" disabled={!helper.connected} onClick={() => patch({ desktopEnabled: !draft.desktopEnabled })}>
             <span className="setting-title"><Monitor size={17} /><span><strong>显示桌面计划</strong><small>生成壁纸，不覆盖普通应用</small></span></span>
