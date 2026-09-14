@@ -12,19 +12,19 @@ if (Test-Path -LiteralPath $cargoBin) {
 }
 
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
-    throw "未找到 Cargo。请先安装 Rust：https://rustup.rs"
+    throw "Cargo was not found. Install Rust from https://rustup.rs first."
 }
 
 $hostLine = (& rustc -vV | Select-String '^host:').Line
 if ($hostLine -match 'windows-gnu') {
     $gcc = Get-Command gcc -ErrorAction SilentlyContinue
     if (-not $gcc) {
-        throw "当前 Rust 使用 GNU 工具链，但未找到 MinGW GCC。"
+        throw "The GNU Rust toolchain is active, but MinGW GCC was not found."
     }
 
     $libgcc = (& gcc -print-libgcc-file-name).Trim()
     if (-not (Test-Path -LiteralPath $libgcc)) {
-        throw "未找到 GCC 运行库：$libgcc"
+        throw "The GCC runtime library was not found: $libgcc"
     }
 
     $compatDir = Join-Path $projectRoot ".tools\mingw-lib"
@@ -38,7 +38,7 @@ if ($hostLine -match 'windows-gnu') {
 
 $tauriCli = Join-Path $projectRoot "node_modules\.bin\tauri.cmd"
 if (-not (Test-Path -LiteralPath $tauriCli)) {
-    throw "尚未安装项目依赖，请先运行 npm install。"
+    throw "Project dependencies are missing. Run npm install first."
 }
 
 Push-Location $projectRoot

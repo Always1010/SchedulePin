@@ -19,3 +19,13 @@
 - 解决方案：为每条示例数据使用与日期或类型关联的确定性 ID，并将数据库写入改为 `INSERT OR IGNORE`，使并发初始化具备幂等性。
 - 验证方式：清理本轮生成的重复示例记录后重新加载原生应用，查询 `plan_items`，每类示例数据只保留一条。
 - 相关文件：`src/data.ts`
+
+## SP-003：Windows PowerShell 5 无法解析开发脚本
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：通过 `npm run desktop:build` 启动构建时，Windows PowerShell 5 在脚本解析阶段报告字符串和右花括号语法错误。
+- 原因分析：`apply_patch` 写入的脚本为无 BOM UTF-8，Windows PowerShell 5 按旧代码页读取其中的中文错误提示，乱码字节破坏了字符串边界。
+- 解决方案：将仅供终端异常使用的脚本字符串改为 ASCII，避免依赖 PowerShell 版本和系统代码页。
+- 验证方式：使用 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 build` 进入 Tauri Release 构建流程。
+- 相关文件：`scripts/tauri.ps1`
