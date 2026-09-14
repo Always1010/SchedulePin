@@ -22,19 +22,13 @@ const starterItems = (): PlanItem[] => {
       id: `starter-task-${today}`, kind: "task", title: "写下今天最重要的一件事",
       scheduledDate: today, startTime: "09:00", endTime: "10:00", priority: 3,
       recurringDaily: false, sortOrder: 0, completed: false, createdAt,
-      completedDate: null,
+      completedDate: null, archivedAt: null,
     },
     {
       id: "starter-discipline", kind: "discipline", title: "开始新任务前，先完成当前任务",
       scheduledDate: today, startTime: null, endTime: null, priority: 1,
       recurringDaily: true, sortOrder: 1, completed: false, createdAt,
-      completedDate: null,
-    },
-    {
-      id: `starter-note-${today}`, kind: "note", title: "想到其他事情时先记在这里，不急着切换。",
-      scheduledDate: today, startTime: null, endTime: null, priority: 0,
-      recurringDaily: false, sortOrder: 2, completed: false, createdAt,
-      completedDate: null,
+      completedDate: null, archivedAt: null,
     },
   ];
 };
@@ -65,14 +59,34 @@ async function allItems(): Promise<PlanItem[]> {
   return initial;
 }
 
+async function preparedItems(date: string): Promise<PlanItem[]> {
+  const stored = await allItems();
+  let changed = false;
+  const prepared = stored.map((item) => {
+    const completedDate = item.completed ? item.completedDate ?? date : null;
+    let archivedAt = item.archivedAt ?? null;
+    if (item.kind === "task" && item.completed && completedDate && completedDate < date && !archivedAt) {
+      archivedAt = completedDate;
+    }
+    if (completedDate !== item.completedDate || archivedAt !== item.archivedAt) changed = true;
+    return { ...item, completedDate, archivedAt };
+  });
+  if (changed) await writeValue(ITEMS_KEY, prepared);
+  return prepared;
+}
+
 export async function loadItems(date = todayKey()): Promise<PlanItem[]> {
-  return (await allItems())
-    .filter((item) => item.scheduledDate === date || item.recurringDaily)
+  return (await preparedItems(date))
+    .filter((item) => !item.archivedAt && (
+      item.kind === "task" || (item.kind === "discipline" && (item.recurringDaily || item.scheduledDate === date))
+    ))
     .map((item) => item.recurringDaily ? { ...item, completed: item.completedDate === date } : item);
 }
 
-export async function loadAllItems(): Promise<PlanItem[]> {
-  return allItems();
+export async function loadArchivedItems(): Promise<PlanItem[]> {
+  return (await preparedItems(todayKey()))
+    .filter((item) => item.kind === "task" && Boolean(item.archivedAt))
+    .sort((a, b) => (b.archivedAt ?? "").localeCompare(a.archivedAt ?? ""));
 }
 
 export async function createItem(input: NewPlanItem): Promise<PlanItem> {
@@ -80,9 +94,9 @@ export async function createItem(input: NewPlanItem): Promise<PlanItem> {
   const item: PlanItem = {
     id: crypto.randomUUID(), kind: input.kind, title: input.title.trim(),
     scheduledDate: input.scheduledDate, startTime: input.startTime || null,
-    endTime: input.endTime || null, priority: input.priority ?? (input.kind === "task" ? 2 : 0),
+    endTime: input.endTime || null, priority: input.priority ?? 0,
     recurringDaily: input.recurringDaily ?? input.kind === "discipline",
-    sortOrder: items.length, completed: false, completedDate: null, createdAt: new Date().toISOString(),
+    sortOrder: items.length, completed: false, completedDate: null, archivedAt: null, createdAt: new Date().toISOString(),
   };
   await writeValue(ITEMS_KEY, [...items, item]);
   return item;
@@ -93,8 +107,27 @@ export async function setCompleted(id: string, day: string, completed: boolean) 
   await writeValue(ITEMS_KEY, items.map((item) => item.id === id ? {
     ...item,
     completed,
-    completedDate: item.recurringDaily && completed ? day : null,
+    completedDate: completed ? day : null,
   } : item));
+}
+
+export async function saveTaskOrder(ids: string[]) {
+  const order = new Map(ids.map((id, index) => [id, index]));
+  await writeValue(ITEMS_KEY, (await allItems()).map((item) => (
+    order.has(item.id) ? { ...item, sortOrder: order.get(item.id)! } : item
+  )));
+}
+
+export async function archiveItem(id: string) {
+  await writeValue(ITEMS_KEY, (await allItems()).map((item) => (
+    item.id === id ? { ...item, archivedAt: new Date().toISOString() } : item
+  )));
+}
+
+export async function restoreItem(id: string) {
+  await writeValue(ITEMS_KEY, (await allItems()).map((item) => (
+    item.id === id ? { ...item, archivedAt: null, completed: false, completedDate: null } : item
+  )));
 }
 
 export async function removeItem(id: string) {

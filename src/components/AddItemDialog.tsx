@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock3, Flag, StickyNote, Target, X } from "lucide-react";
+import { Clock3, Flag, Target, X } from "lucide-react";
 import type { ItemKind, NewPlanItem } from "../types";
 
 interface Props {
@@ -12,7 +12,6 @@ interface Props {
 const types: Array<{ value: ItemKind; label: string; icon: typeof Target }> = [
   { value: "task", label: "任务", icon: Target },
   { value: "discipline", label: "纪律", icon: Flag },
-  { value: "note", label: "备忘", icon: StickyNote },
 ];
 
 export function AddItemDialog({ open, date, onClose, onSubmit }: Props) {
@@ -20,7 +19,6 @@ export function AddItemDialog({ open, date, onClose, onSubmit }: Props) {
   const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [priority, setPriority] = useState(2);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -37,7 +35,7 @@ export function AddItemDialog({ open, date, onClose, onSubmit }: Props) {
       kind, title, scheduledDate: date,
       startTime: kind === "task" ? startTime || null : null,
       endTime: kind === "task" ? endTime || null : null,
-      priority: kind === "task" ? priority : 0,
+      priority: 0,
       recurringDaily: kind === "discipline",
     });
     setTitle("");
@@ -67,23 +65,13 @@ export function AddItemDialog({ open, date, onClose, onSubmit }: Props) {
         </div>
 
         <label className="field-label" htmlFor="item-title">内容</label>
-        {kind === "note" ? (
-          <textarea id="item-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="写下需要记住的内容……" rows={4} />
-        ) : (
-          <input id="item-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === "task" ? "要完成什么？" : "想坚持什么原则？"} />
-        )}
+        <input id="item-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === "task" ? "要完成什么？" : "想坚持什么原则？"} />
 
         {kind === "task" && (
           <>
             <div className="form-row">
               <label><span><Clock3 size={14} />开始</span><input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></label>
               <label><span><Clock3 size={14} />结束</span><input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} /></label>
-            </div>
-            <div className="priority-field">
-              <span><CalendarDays size={14} />优先级</span>
-              <div className="priority-buttons">
-                {[1, 2, 3].map((value) => <button type="button" key={value} className={priority === value ? "active" : ""} onClick={() => setPriority(value)}>{["普通", "重要", "重点"][value - 1]}</button>)}
-              </div>
             </div>
           </>
         )}

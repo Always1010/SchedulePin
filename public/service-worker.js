@@ -23,7 +23,7 @@ async function snapshot() {
     protocolVersion: 1,
     date,
     generatedAt: now.toISOString(),
-    items: stored[ITEMS_KEY] || [],
+    items: (stored[ITEMS_KEY] || []).filter((item) => !item.archivedAt && item.kind !== "note"),
     settings: stored[SETTINGS_KEY] || {
       opacity: 0.86,
       displayMode: "single",

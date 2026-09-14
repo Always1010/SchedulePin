@@ -11,10 +11,14 @@ pub struct PlanItem {
     pub start_time: Option<String>,
     pub end_time: Option<String>,
     pub priority: i32,
+    #[serde(default)]
+    pub sort_order: i32,
     pub recurring_daily: bool,
     pub completed: bool,
     #[serde(default)]
     pub completed_date: Option<String>,
+    #[serde(default)]
+    pub archived_at: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

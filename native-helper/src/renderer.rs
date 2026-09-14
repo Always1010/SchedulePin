@@ -30,9 +30,13 @@ fn image_data(path: Option<&Path>) -> Option<String> {
 }
 
 fn visible_items<'a>(snapshot: &'a DesktopSnapshot, kind: &str) -> Vec<&'a PlanItem> {
-    snapshot.items.iter().filter(|item| {
-        item.kind == kind && (item.scheduled_date == snapshot.date || item.recurring_daily)
-    }).collect()
+    let mut items: Vec<_> = snapshot.items.iter().filter(|item| {
+        item.archived_at.is_none() && item.kind == kind && (
+            kind == "task" || item.scheduled_date == snapshot.date || item.recurring_daily
+        )
+    }).collect();
+    items.sort_by_key(|item| item.sort_order);
+    items
 }
 
 fn is_completed(item: &PlanItem, date: &str) -> bool {
@@ -42,7 +46,6 @@ fn is_completed(item: &PlanItem, date: &str) -> bool {
 fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: f64) -> String {
     let tasks = visible_items(snapshot, "task");
     let disciplines = visible_items(snapshot, "discipline");
-    let notes = visible_items(snapshot, "note");
     let padding = (width * 0.055).clamp(18.0, 42.0);
     let title_size = (width * 0.055).clamp(22.0, 42.0);
     let body_size = (width * 0.029).clamp(14.0, 24.0);
@@ -56,10 +59,28 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
     );
     cursor += small_size * 4.0;
 
-    output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" font-weight="700" fill="#46534d">今日重点</text>"##, x + padding, cursor, body_size));
-    cursor += body_size * 1.65;
-    for task in tasks.iter().take(5) {
-        if cursor > y + height * 0.62 { break; }
+    if !disciplines.is_empty() {
+        let discipline_count = disciplines.len().min(3);
+        let discipline_height = body_size * (2.5 + discipline_count as f64 * 1.45);
+        output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="#30463d"/>
+          <text x="{}" y="{}" font-size="{}" font-weight="700" fill="#f2b39b">纪律</text>"##,
+          x + padding * 0.72, cursor - body_size, width - padding * 1.44, discipline_height,
+          body_size * 0.7, x + padding * 1.3, cursor, body_size));
+        cursor += body_size * 1.65;
+        for item in disciplines.iter().take(3) {
+            output.push_str(&format!(r##"<circle cx="{}" cy="{}" r="{}" fill="{}"/><text x="{}" y="{}" font-size="{}" fill="#f5f4ef">{}</text>"##,
+              x + padding * 1.35, cursor - body_size * 0.28, body_size * 0.28,
+              if is_completed(item, &snapshot.date) { "#da8668" } else { "#73867d" },
+              x + padding * 1.85, cursor, body_size * 0.86, xml(&shorten(&item.title, max_chars))));
+            cursor += body_size * 1.55;
+        }
+        cursor += body_size * 1.25;
+    }
+
+    output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" font-weight="700" fill="#46534d">To-Do List</text>"##, x + padding, cursor, body_size));
+    cursor += body_size * 1.75;
+    for task in tasks.iter().take(8) {
+        if cursor > y + height - padding { break; }
         let completed = is_completed(task, &snapshot.date);
         let color = if completed { "#87918c" } else { "#343c38" };
         output.push_str(&format!(
@@ -72,25 +93,9 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
             xml(&shorten(&task.title, max_chars))
         ));
         if let Some(time) = &task.start_time {
-            output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" fill="#879089">{}</text>"##, x + padding + body_size * 1.25, cursor + small_size * 1.45, small_size, xml(time)));
-            cursor += small_size * 1.35;
+            output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" text-anchor="end" fill="#879089">{}</text>"##, x + width - padding * 1.1, cursor, small_size, xml(time)));
         }
         cursor += body_size * 1.65;
-    }
-
-    if !disciplines.is_empty() && cursor < y + height * 0.78 {
-        cursor += body_size * 0.5;
-        output.push_str(&format!(r##"<line x1="{}" x2="{}" y1="{}" y2="{}" stroke="#d9ddd8"/><text x="{}" y="{}" font-size="{}" font-weight="700" fill="#6d765f">每日纪律</text>"##, x + padding, x + width - padding, cursor, cursor, x + padding, cursor + body_size * 1.8, body_size));
-        cursor += body_size * 3.2;
-        for item in disciplines.iter().take(3) {
-            output.push_str(&format!(r##"<circle cx="{}" cy="{}" r="{}" fill="{}"/><text x="{}" y="{}" font-size="{}" fill="#4f5853">{}</text>"##, x + padding + body_size * 0.35, cursor - body_size * 0.28, body_size * 0.28, if is_completed(item, &snapshot.date) { "#789889" } else { "#d7dcd7" }, x + padding + body_size * 1.2, cursor, body_size * 0.9, xml(&shorten(&item.title, max_chars))));
-            cursor += body_size * 1.55;
-        }
-    }
-
-    if let Some(note) = notes.first() {
-        let note_y = (y + height - padding - body_size * 3.0).max(cursor + body_size);
-        output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="#eef2e8"/><text x="{}" y="{}" font-size="{}" font-weight="700" fill="#627065">备忘</text><text x="{}" y="{}" font-size="{}" fill="#6e7771">{}</text>"##, x + padding, note_y, width - padding * 2.0, body_size * 2.5, body_size * 0.5, x + padding * 1.45, note_y + body_size, small_size, x + padding * 1.45, note_y + body_size * 1.9, small_size, xml(&shorten(&note.title, max_chars))));
     }
     output
 }
