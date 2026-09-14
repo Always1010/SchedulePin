@@ -26,6 +26,11 @@ async function snapshot() {
     items: (stored[ITEMS_KEY] || []).filter((item) => !item.archivedAt && item.kind !== "note"),
     settings: stored[SETTINGS_KEY] || {
       principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。",
+      theme: "warm",
+      fontFamily: "modern",
+      fontScale: 1,
+      density: "comfortable",
+      cardRadius: 20,
       opacity: 0.86,
       displayMode: "single",
       selectedMonitorId: null,

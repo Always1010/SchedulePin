@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
 import { ArchivePage } from "./components/ArchivePage";
-import { SettingsPanel } from "./components/SettingsPanel";
+import { SettingsPage } from "./components/SettingsPage";
 import {
   archiveItem, createItem, defaultSettings, loadArchivedItems, loadItems, loadSettings,
   removeItem, restoreItem, saveSettings, saveTaskOrder, setCompleted, subscribeStorage, todayKey,
@@ -70,11 +70,10 @@ function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
 export default function App() {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [archived, setArchived] = useState<PlanItem[]>([]);
-  const [page, setPage] = useState<"main" | "archive">("main");
+  const [page, setPage] = useState<"main" | "archive" | "settings">("main");
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [helper, setHelper] = useState<HelperStatus>({ connected: false, monitors: [] });
   const today = todayKey();
@@ -106,8 +105,8 @@ export default function App() {
   }, [settings]);
 
   useEffect(() => {
-    if (settingsOpen) refreshHelper();
-  }, [settingsOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (page === "settings") refreshHelper();
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tasks = useMemo(() => items
     .filter((item) => item.kind === "task")
@@ -179,8 +178,13 @@ export default function App() {
     await saveSettings(next);
   };
 
+  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} density-${settings.density}`;
+
   return (
-    <div className={sidePanel ? "app compact extension-app" : "app extension-app"}>
+    <div
+      className={`${sidePanel ? "app compact extension-app" : "app extension-app"} ${appearanceClass}`}
+      style={{ "--font-scale": settings.fontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
+    >
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark"><CalendarCheck size={19} /></span>
@@ -188,12 +192,14 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           {settings.desktopEnabled && <span className="wallpaper-live">桌面同步已开启</span>}
-          <button className="icon-button" onClick={() => setSettingsOpen(true)} aria-label="设置"><Settings size={18} /></button>
+          <button className="icon-button" onClick={() => setPage("settings")} aria-label="设置"><Settings size={18} /></button>
         </div>
       </header>
 
       {page === "archive" ? (
         <ArchivePage items={archived} onBack={() => setPage("main")} onRestore={restoreArchived} onDelete={remove} />
+      ) : page === "settings" ? (
+        <SettingsPage settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onBack={() => setPage("main")} />
       ) : <main className="todo-main">
         <section className="day-hero todo-hero">
           <div><span className="eyebrow">今天</span><h1>{dateLabel(new Date())}</h1><p>完成的任务会保留到今天结束，明天自动归档。</p></div>
@@ -206,7 +212,7 @@ export default function App() {
           <div className="principle-heading">
             <span className="principle-mark"><BookOpenText size={19} /></span>
             <div><span className="eyebrow">How I work</span><h2>Principle</h2></div>
-            <button type="button" onClick={() => setSettingsOpen(true)}>编辑</button>
+            <button type="button" onClick={() => setPage("settings")}>编辑</button>
           </div>
           <p className="principle-copy">{settings.principle || "在设置中写下希望长期遵循的做事原则。"}</p>
         </section>
@@ -243,7 +249,6 @@ export default function App() {
 
       {page === "main" && <button className="floating-add" onClick={() => setAddOpen(true)}><Plus size={20} /><span>添加</span></button>}
       <AddItemDialog open={addOpen} date={today} onClose={() => setAddOpen(false)} onSubmit={add} />
-      <SettingsPanel open={settingsOpen} settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

@@ -47,6 +47,11 @@ export interface DesktopLayout {
 
 export interface AppSettings {
   principle: string;
+  theme: "warm" | "light" | "dark" | "system";
+  fontFamily: "system" | "modern" | "reading" | "rounded";
+  fontScale: number;
+  density: "compact" | "comfortable" | "spacious";
+  cardRadius: number;
   opacity: number;
   displayMode: "single" | "all";
   selectedMonitorId: string | null;

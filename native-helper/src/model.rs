@@ -48,6 +48,16 @@ impl Default for DesktopLayout {
 pub struct AppSettings {
     #[serde(default)]
     pub principle: String,
+    #[serde(default)]
+    pub theme: String,
+    #[serde(default)]
+    pub font_family: String,
+    #[serde(default = "default_font_scale")]
+    pub font_scale: f64,
+    #[serde(default)]
+    pub density: String,
+    #[serde(default = "default_card_radius")]
+    pub card_radius: f64,
     pub opacity: f64,
     pub display_mode: String,
     pub selected_monitor_id: Option<String>,
@@ -55,6 +65,9 @@ pub struct AppSettings {
     #[serde(default)]
     pub layouts: HashMap<String, DesktopLayout>,
 }
+
+fn default_font_scale() -> f64 { 1.0 }
+fn default_card_radius() -> f64 { 20.0 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

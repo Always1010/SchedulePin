@@ -60,9 +60,10 @@ fn is_completed(item: &PlanItem, date: &str) -> bool {
 
 fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: f64) -> String {
     let tasks = visible_items(snapshot, "task");
+    let font_scale = snapshot.settings.font_scale.clamp(0.85, 1.25);
     let padding = (width * 0.055).clamp(18.0, 42.0);
-    let title_size = (width * 0.055).clamp(22.0, 42.0);
-    let body_size = (width * 0.029).clamp(14.0, 24.0);
+    let title_size = (width * 0.055).clamp(22.0, 42.0) * font_scale;
+    let body_size = (width * 0.029).clamp(14.0, 24.0) * font_scale;
     let small_size = (body_size * 0.72).max(11.0);
     let mut cursor = y + padding + title_size;
     let max_chars = ((width - padding * 2.0) / (body_size * 0.62)).max(8.0) as usize;
@@ -130,6 +131,13 @@ pub fn render_wallpaper(
     let y = (layout.y.clamp(0.0, 1.0) * screen_height).min(screen_height - height);
     let background_svg = image_data(background).map(|data| format!(r##"<image href="{data}" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>"##)).unwrap_or_else(|| r##"<rect width="100%" height="100%" fill="url(#background)"/>"##.into());
     let opacity = snapshot.settings.opacity.clamp(0.35, 1.0);
+    let radius = snapshot.settings.card_radius.clamp(8.0, 30.0);
+    let font_family = match snapshot.settings.font_family.as_str() {
+        "reading" => "Noto Serif SC, SimSun, serif",
+        "rounded" => "Microsoft YaHei UI, Noto Sans SC, sans-serif",
+        "system" => "Segoe UI, Microsoft YaHei UI, sans-serif",
+        _ => "Segoe UI, Noto Sans SC, Microsoft YaHei, sans-serif",
+    };
     let content = plan_content(snapshot, x, y, width, height);
     let svg = format!(r##"<svg xmlns="http://www.w3.org/2000/svg" width="{screen_width}" height="{screen_height}" viewBox="0 0 {screen_width} {screen_height}">
       <defs>
@@ -137,8 +145,8 @@ pub fn render_wallpaper(
         <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#25332d" flood-opacity="0.24"/></filter>
       </defs>
       {background_svg}
-      <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="28" fill="#f7f5ef" fill-opacity="{opacity}" filter="url(#shadow)"/>
-      {content}
+      <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="{radius}" fill="#f7f5ef" fill-opacity="{opacity}" filter="url(#shadow)"/>
+      <g font-family="{font_family}">{content}</g>
     </svg>"##);
 
     let mut options = usvg::Options::default();
@@ -160,7 +168,11 @@ mod tests {
         let monitor = MonitorInfo { id: "test".into(), index: 0, name: "测试".into(), x: 0, y: 0, width: 800, height: 450, primary: true };
         let snapshot = DesktopSnapshot {
             protocol_version: 1, date: "2026-09-14".into(), generated_at: "now".into(), items: vec![],
-            settings: AppSettings { principle: "完成当前任务再开始下一项。".into(), opacity: 0.86, display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new() },
+            settings: AppSettings {
+                principle: "完成当前任务再开始下一项。".into(), theme: "warm".into(), font_family: "modern".into(),
+                font_scale: 1.0, density: "comfortable".into(), card_radius: 20.0, opacity: 0.86,
+                display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new(),
+            },
         };
         let directory = tempfile::tempdir().unwrap();
         let target = directory.path().join("wallpaper.png");

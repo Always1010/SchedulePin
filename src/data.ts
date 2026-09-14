@@ -129,6 +129,11 @@ export async function removeItem(id: string) {
 
 export const defaultSettings: AppSettings = {
   principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。每天结束前回顾当天完成的内容。",
+  theme: "warm",
+  fontFamily: "modern",
+  fontScale: 1,
+  density: "comfortable",
+  cardRadius: 20,
   opacity: 0.86,
   displayMode: "single",
   selectedMonitorId: null,
