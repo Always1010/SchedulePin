@@ -289,7 +289,7 @@ main::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(86, 93, 83,
 .todo-list { gap: 2px; }
 .todo-list .task-row { min-height: 61px; padding-right: 6px; border-bottom: 1px solid rgba(45,50,44,.06); border-radius: 10px; }
 .todo-list .task-row:last-child { border-bottom-color: transparent; }
-.task-row.dragging { opacity: .32; background: #e7eee9; }
+.task-row.dragging { opacity: .86; background: rgba(255,255,255,.96); border-color: rgba(102,132,118,.22); box-shadow: 0 14px 32px rgba(43,61,52,.16); }
 .drag-handle { width: 25px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; color: #bec2bb; background: transparent; cursor: grab; touch-action: none; }
 .drag-handle:hover { color: #667b71; background: #e8eee9; }
 .drag-handle:active { cursor: grabbing; }

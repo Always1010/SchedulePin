@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  closestCenter, DndContext, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Archive, BookOpenText, CalendarCheck, Check, Clock3, GripVertical,
   ListTodo, Plus, Settings, Trash2,
 } from "lucide-react";
@@ -25,36 +34,25 @@ function CheckButton({ checked, onClick }: { checked: boolean; onClick: () => vo
 
 interface TaskRowProps {
   item: PlanItem;
-  dragging: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onArchive: () => void;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onDrop: (targetId: string, sourceId: string) => void;
 }
 
-function TaskRow({ item, dragging, onToggle, onDelete, onArchive, onDragStart, onDragEnd, onDrop }: TaskRowProps) {
+function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   return (
     <article
-      className={`${item.completed ? "task-row completed" : "task-row"}${dragging ? " dragging" : ""}`}
+      ref={setNodeRef}
+      className={`${item.completed ? "task-row completed" : "task-row"}${isDragging ? " dragging" : ""}`}
       data-task-id={item.id}
+      style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 2 : undefined }}
     >
       <button
         type="button"
         className="drag-handle"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.currentTarget.setPointerCapture(event.pointerId);
-          onDragStart(item.id);
-        }}
-        onPointerUp={(event) => {
-          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-task-id]");
-          if (target?.dataset.taskId) onDrop(target.dataset.taskId, item.id);
-          event.currentTarget.releasePointerCapture(event.pointerId);
-          onDragEnd();
-        }}
-        onPointerCancel={onDragEnd}
+        {...attributes}
+        {...listeners}
         aria-label={`拖动 ${item.title} 调整顺序`}
         title="拖动调整顺序"
       ><GripVertical size={16} /></button>
@@ -74,13 +72,16 @@ export default function App() {
   const [archived, setArchived] = useState<PlanItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [helper, setHelper] = useState<HelperStatus>({ connected: false, monitors: [] });
   const today = todayKey();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const refresh = useCallback(async () => {
     const [nextItems, nextSettings] = await Promise.all([loadItems(today), loadSettings()]);
@@ -138,18 +139,14 @@ export default function App() {
     await add({ kind: "task", title, scheduledDate: today });
   };
 
-  const moveTask = async (targetId: string, transferredId: string) => {
-    const sourceId = transferredId || draggingId;
-    if (!sourceId || sourceId === targetId) return;
-    const next = [...tasks];
-    const sourceIndex = next.findIndex((item) => item.id === sourceId);
-    const targetIndex = next.findIndex((item) => item.id === targetId);
+  const moveTask = async ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const sourceIndex = tasks.findIndex((item) => item.id === active.id);
+    const targetIndex = tasks.findIndex((item) => item.id === over.id);
     if (sourceIndex < 0 || targetIndex < 0) return;
-    const [moved] = next.splice(sourceIndex, 1);
-    next.splice(targetIndex, 0, moved);
+    const next = arrayMove(tasks, sourceIndex, targetIndex);
     const order = new Map(next.map((item, index) => [item.id, index]));
     setItems((current) => current.map((item) => order.has(item.id) ? { ...item, sortOrder: order.get(item.id)! } : item));
-    setDraggingId(null);
     await saveTaskOrder(next.map((item) => item.id));
   };
 
@@ -218,19 +215,21 @@ export default function App() {
             <button type="button" className="archive-link" onClick={openArchive}><Archive size={15} />归档</button>
           </div>
           <div className="task-list todo-list">
-            {loading ? <div className="empty">正在打开任务列表…</div> : tasks.length ? tasks.map((item) => (
-              <TaskRow
-                key={item.id}
-                item={item}
-                dragging={draggingId === item.id}
-                onToggle={() => toggle(item)}
-                onDelete={() => remove(item.id)}
-                onArchive={() => archiveTask(item.id)}
-                onDragStart={setDraggingId}
-                onDragEnd={() => setDraggingId(null)}
-                onDrop={moveTask}
-              />
-            )) : <div className="todo-empty"><Check size={18} /><span>现在没有待办事项</span></div>}
+            {loading ? <div className="empty">正在打开任务列表…</div> : tasks.length ? (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={moveTask}>
+                <SortableContext items={tasks.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                  {tasks.map((item) => (
+                    <TaskRow
+                      key={item.id}
+                      item={item}
+                      onToggle={() => toggle(item)}
+                      onDelete={() => remove(item.id)}
+                      onArchive={() => archiveTask(item.id)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            ) : <div className="todo-empty"><Check size={18} /><span>现在没有待办事项</span></div>}
           </div>
           <form className="quick-add" onSubmit={quickAdd}>
             <Plus size={18} />
