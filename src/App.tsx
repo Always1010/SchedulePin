@@ -13,6 +13,7 @@ import {
   ListTodo, Plus, Settings, Trash2,
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
+import { AppearanceEditor } from "./components/AppearanceEditor";
 import { ArchivePage } from "./components/ArchivePage";
 import { SettingsPage } from "./components/SettingsPage";
 import {
@@ -70,7 +71,7 @@ function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
 export default function App() {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [archived, setArchived] = useState<PlanItem[]>([]);
-  const [page, setPage] = useState<"main" | "archive" | "settings">("main");
+  const [page, setPage] = useState<"main" | "archive" | "settings" | "appearance">("main");
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -198,8 +199,15 @@ export default function App() {
 
       {page === "archive" ? (
         <ArchivePage items={archived} onBack={() => setPage("main")} onRestore={restoreArchived} onDelete={remove} />
+      ) : page === "appearance" ? (
+        <AppearanceEditor
+          settings={settings}
+          items={items}
+          onSave={async (next) => { await updateSettings(next); setPage("settings"); }}
+          onCancel={() => setPage("settings")}
+        />
       ) : page === "settings" ? (
-        <SettingsPage settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onBack={() => setPage("main")} />
+        <SettingsPage settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onOpenAppearance={() => setPage("appearance")} onBack={() => setPage("main")} />
       ) : <main className="todo-main">
         <section className="day-hero todo-hero">
           <div><span className="eyebrow">今天</span><h1>{dateLabel(new Date())}</h1><p>完成的任务会保留到今天结束，明天自动归档。</p></div>
