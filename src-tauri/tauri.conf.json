@@ -30,7 +30,13 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
     "shortDescription": "把今天真正重要的事钉在桌面上",
     "longDescription": "SchedulePin 是一款轻量的 Windows 桌面计划板。"
   }

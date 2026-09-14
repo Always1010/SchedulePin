@@ -29,3 +29,23 @@
 - 解决方案：将仅供终端异常使用的脚本字符串改为 ASCII，避免依赖 PowerShell 版本和系统代码页。
 - 验证方式：使用 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tauri.ps1 build` 进入 Tauri Release 构建流程。
 - 相关文件：`scripts/tauri.ps1`
+
+## SP-004：Windows 安装包无法找到应用图标
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：Release 主程序成功生成，但 WiX 安装包阶段提示找不到 `.ico` 图标并停止。
+- 原因分析：图标文件已经生成在 `src-tauri/icons`，但 `bundle` 配置没有显式列出打包平台应使用的图标资源。
+- 解决方案：在 Tauri `bundle.icon` 中配置 Windows ICO 和多尺寸 PNG 图标。
+- 验证方式：重新运行 `npm run desktop:build`，安装包打包阶段能够定位 `.ico` 并继续执行。
+- 相关文件：`src-tauri/tauri.conf.json`
+
+## SP-005：发布构建被非目标安装格式中断
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：MSI 已成功生成，但发布命令随后继续构建 NSIS 安装包，并因本机 NSIS 扩展无法加载而以失败状态退出。
+- 原因分析：首版仅需要稳定的 Windows 安装包，`bundle.targets` 却配置为 `all`，无条件引入了未验证的额外安装格式及其工具链依赖。
+- 解决方案：将首版发布目标明确限制为 WiX MSI，保证发布命令的结果与实际交付格式一致。
+- 验证方式：重新运行 `npm run desktop:build`，命令成功退出并生成 `SchedulePin_0.1.0_x64_en-US.msi`。
+- 相关文件：`src-tauri/tauri.conf.json`
