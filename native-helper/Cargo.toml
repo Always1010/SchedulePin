@@ -1,6 +1,6 @@
 [package]
 name = "schedulepin-helper"
-version = "0.2.0"
+version = "0.3.0"
 description = "SchedulePin 可选 Windows 壁纸助手"
 authors = ["SchedulePin"]
 edition = "2021"
