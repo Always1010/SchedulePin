@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Archive, CalendarCheck, Check, Clock3, Flame, GripVertical,
+  Archive, BookOpenText, CalendarCheck, Check, Clock3, GripVertical,
   ListTodo, Plus, Settings, Trash2,
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
@@ -111,10 +111,8 @@ export default function App() {
   const tasks = useMemo(() => items
     .filter((item) => item.kind === "task")
     .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt)), [items]);
-  const disciplines = items.filter((item) => item.kind === "discipline");
   const completed = tasks.filter((item) => item.completed).length;
   const progress = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-  const disciplineCompleted = disciplines.filter((item) => item.completed).length;
 
   const toggle = async (item: PlanItem) => {
     setItems((current) => current.map((row) => row.id === item.id ? { ...row, completed: !row.completed, completedDate: !row.completed ? today : null } : row));
@@ -205,21 +203,13 @@ export default function App() {
           </div>
         </section>
 
-        <section className="discipline-spotlight">
-          <div className="discipline-heading">
-            <span className="discipline-mark"><Flame size={19} /></span>
-            <div><span className="eyebrow">每天守住</span><h2>纪律</h2></div>
-            <strong>{disciplineCompleted}/{disciplines.length}</strong>
+        <section className="principle-spotlight">
+          <div className="principle-heading">
+            <span className="principle-mark"><BookOpenText size={19} /></span>
+            <div><span className="eyebrow">How I work</span><h2>Principle</h2></div>
+            <button type="button" onClick={() => setSettingsOpen(true)}>编辑</button>
           </div>
-          <div className="discipline-list spotlight-list">
-            {disciplines.length ? disciplines.map((item) => (
-              <div className={item.completed ? "discipline-item completed" : "discipline-item"} key={item.id}>
-                <CheckButton checked={item.completed} onClick={() => toggle(item)} />
-                <span>{item.title}</span>
-                <button className="delete-button" onClick={() => remove(item.id)} aria-label={`删除 ${item.title}`}><Trash2 size={13} /></button>
-              </div>
-            )) : <p className="empty-mini">用右下角“添加”建立一条每天都要守住的纪律。</p>}
-          </div>
+          <p className="principle-copy">{settings.principle || "在设置中写下希望长期遵循的做事原则。"}</p>
         </section>
 
         <section className="todo-card">

@@ -25,6 +25,7 @@ async function snapshot() {
     generatedAt: now.toISOString(),
     items: (stored[ITEMS_KEY] || []).filter((item) => !item.archivedAt && item.kind !== "note"),
     settings: stored[SETTINGS_KEY] || {
+      principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。",
       opacity: 0.86,
       displayMode: "single",
       selectedMonitorId: null,

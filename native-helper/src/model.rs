@@ -44,6 +44,8 @@ impl Default for DesktopLayout {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
+    #[serde(default)]
+    pub principle: String,
     pub opacity: f64,
     pub display_mode: String,
     pub selected_monitor_id: Option<String>,

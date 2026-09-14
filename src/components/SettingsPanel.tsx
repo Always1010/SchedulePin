@@ -41,6 +41,11 @@ export function SettingsPanel({ open, settings, helper, onChange, onRefreshHelpe
       </div>
 
       <section className="settings-section">
+        <label className="settings-textarea-label" htmlFor="principle"><strong>Principle</strong><small>作为一段完整文字显示，不参与任务完成度。</small></label>
+        <textarea id="principle" className="settings-textarea" rows={5} value={draft.principle} onChange={(event) => patch({ principle: event.target.value })} placeholder="写下做事时希望遵循的原则……" />
+      </section>
+
+      <section className="settings-section">
         <div className={helper.connected ? "helper-card connected" : "helper-card"}>
           <span className="helper-icon">{helper.connected ? <Check size={17} /> : <Unplug size={17} />}</span>
           <span><strong>{helper.connected ? "桌面助手已连接" : "浏览器独立模式"}</strong><small>{helper.connected ? `版本 ${helper.version ?? "未知"} · ${helper.monitors.length} 块显示器` : "任务管理可以正常使用；桌面壁纸功能需要可选助手。"}</small></span>

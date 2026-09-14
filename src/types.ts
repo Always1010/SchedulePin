@@ -45,6 +45,7 @@ export interface DesktopLayout {
 }
 
 export interface AppSettings {
+  principle: string;
   opacity: number;
   displayMode: "single" | "all";
   selectedMonitorId: string | null;

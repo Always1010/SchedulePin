@@ -17,6 +17,21 @@ fn shorten(value: &str, max: usize) -> String {
     if chars.next().is_some() { format!("{text}…") } else { text }
 }
 
+fn wrap_text(value: &str, max_chars: usize, max_lines: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    for paragraph in value.lines() {
+        let characters: Vec<char> = paragraph.trim().chars().collect();
+        if characters.is_empty() { continue; }
+        for chunk in characters.chunks(max_chars.max(1)) {
+            if lines.len() == max_lines { break; }
+            lines.push(chunk.iter().collect());
+        }
+        if lines.len() == max_lines { break; }
+    }
+    if lines.is_empty() { lines.push("写下希望长期遵循的做事原则。".into()); }
+    lines
+}
+
 fn image_data(path: Option<&Path>) -> Option<String> {
     let path = path.filter(|value| value.is_file())?;
     let mime = match path.extension()?.to_string_lossy().to_ascii_lowercase().as_str() {
@@ -45,7 +60,6 @@ fn is_completed(item: &PlanItem, date: &str) -> bool {
 
 fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: f64) -> String {
     let tasks = visible_items(snapshot, "task");
-    let disciplines = visible_items(snapshot, "discipline");
     let padding = (width * 0.055).clamp(18.0, 42.0);
     let title_size = (width * 0.055).clamp(22.0, 42.0);
     let body_size = (width * 0.029).clamp(14.0, 24.0);
@@ -59,23 +73,24 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
     );
     cursor += small_size * 4.0;
 
-    if !disciplines.is_empty() {
-        let discipline_count = disciplines.len().min(3);
-        let discipline_height = body_size * (2.5 + discipline_count as f64 * 1.45);
-        output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="#30463d"/>
-          <text x="{}" y="{}" font-size="{}" font-weight="700" fill="#f2b39b">纪律</text>"##,
-          x + padding * 0.72, cursor - body_size, width - padding * 1.44, discipline_height,
-          body_size * 0.7, x + padding * 1.3, cursor, body_size));
-        cursor += body_size * 1.65;
-        for item in disciplines.iter().take(3) {
-            output.push_str(&format!(r##"<circle cx="{}" cy="{}" r="{}" fill="{}"/><text x="{}" y="{}" font-size="{}" fill="#f5f4ef">{}</text>"##,
-              x + padding * 1.35, cursor - body_size * 0.28, body_size * 0.28,
-              if is_completed(item, &snapshot.date) { "#da8668" } else { "#73867d" },
-              x + padding * 1.85, cursor, body_size * 0.86, xml(&shorten(&item.title, max_chars))));
-            cursor += body_size * 1.55;
-        }
+    let principle = if snapshot.settings.principle.trim().is_empty() {
+        "写下希望长期遵循的做事原则。"
+    } else {
+        snapshot.settings.principle.trim()
+    };
+    let principle_lines = wrap_text(principle, max_chars.saturating_sub(2), 5);
+    let principle_height = body_size * (2.8 + principle_lines.len() as f64 * 1.25);
+    output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="#30463d"/>
+      <text x="{}" y="{}" font-size="{}" font-weight="700" fill="#f2b39b">PRINCIPLE</text>"##,
+      x + padding * 0.72, cursor - body_size, width - padding * 1.44, principle_height,
+      body_size * 0.7, x + padding * 1.3, cursor, body_size * 0.78));
+    cursor += body_size * 1.55;
+    for line in principle_lines {
+        output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" fill="#f5f4ef">{}</text>"##,
+          x + padding * 1.3, cursor, body_size * 0.78, xml(&line)));
         cursor += body_size * 1.25;
     }
+    cursor += body_size * 1.4;
 
     output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" font-weight="700" fill="#46534d">To-Do List</text>"##, x + padding, cursor, body_size));
     cursor += body_size * 1.75;
@@ -145,7 +160,7 @@ mod tests {
         let monitor = MonitorInfo { id: "test".into(), index: 0, name: "测试".into(), x: 0, y: 0, width: 800, height: 450, primary: true };
         let snapshot = DesktopSnapshot {
             protocol_version: 1, date: "2026-09-14".into(), generated_at: "now".into(), items: vec![],
-            settings: AppSettings { opacity: 0.86, display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new() },
+            settings: AppSettings { principle: "完成当前任务再开始下一项。".into(), opacity: 0.86, display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new() },
         };
         let directory = tempfile::tempdir().unwrap();
         let target = directory.path().join("wallpaper.png");

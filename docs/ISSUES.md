@@ -108,3 +108,13 @@
 - 解决方案：将图标改为可抓取的指针拖动手柄，根据释放位置调整任务顺序并持久化；该实现同时支持鼠标与触控输入，不依赖浏览器原生 HTML 拖放的数据传递。列表统一按 `sortOrder` 和添加时间显示，桌面壁纸采用同一顺序。
 - 验证方式：将任意任务拖到另一任务位置后，页面立即交换顺序；刷新页面后顺序保持不变，插件生产构建和助手渲染测试通过。
 - 相关文件：`src/App.tsx`、`src/data.ts`、`src/styles.css`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`
+
+## SP-012：原则内容被错误建模为可完成的纪律任务
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：原“纪律”区域把长期遵循的文字拆成多条带勾选框的记录，并显示完成数量，与用户需要的一整段原则说明不符。
+- 原因分析：旧数据模型复用了任务的完成状态和每日重复字段，没有区分“行动项”和“长期原则”两种完全不同的信息。
+- 解决方案：将模块改名为 `Principle`，作为设置中的独立段落保存；移除勾选、完成数量和逐条添加入口，并把旧纪律内容自动合并迁移。浏览器页面和桌面壁纸使用同一段原则文本。
+- 验证方式：TypeScript 类型检查与 Rust 助手测试通过；原则不再出现在任务集合中，也不参与完成度和归档流程。
+- 相关文件：`src/types.ts`、`src/data.ts`、`src/App.tsx`、`src/components/AddItemDialog.tsx`、`src/components/SettingsPanel.tsx`、`src/styles.css`、`public/service-worker.js`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`

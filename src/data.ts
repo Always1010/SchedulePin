@@ -24,12 +24,6 @@ const starterItems = (): PlanItem[] => {
       recurringDaily: false, sortOrder: 0, completed: false, createdAt,
       completedDate: null, archivedAt: null,
     },
-    {
-      id: "starter-discipline", kind: "discipline", title: "开始新任务前，先完成当前任务",
-      scheduledDate: today, startTime: null, endTime: null, priority: 1,
-      recurringDaily: true, sortOrder: 1, completed: false, createdAt,
-      completedDate: null, archivedAt: null,
-    },
   ];
 };
 
@@ -77,10 +71,7 @@ async function preparedItems(date: string): Promise<PlanItem[]> {
 
 export async function loadItems(date = todayKey()): Promise<PlanItem[]> {
   return (await preparedItems(date))
-    .filter((item) => !item.archivedAt && (
-      item.kind === "task" || (item.kind === "discipline" && (item.recurringDaily || item.scheduledDate === date))
-    ))
-    .map((item) => item.recurringDaily ? { ...item, completed: item.completedDate === date } : item);
+    .filter((item) => !item.archivedAt && item.kind === "task");
 }
 
 export async function loadArchivedItems(): Promise<PlanItem[]> {
@@ -135,6 +126,7 @@ export async function removeItem(id: string) {
 }
 
 export const defaultSettings: AppSettings = {
+  principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。每天结束前回顾当天完成的内容。",
   opacity: 0.86,
   displayMode: "single",
   selectedMonitorId: null,
@@ -144,7 +136,21 @@ export const defaultSettings: AppSettings = {
 
 export async function loadSettings(): Promise<AppSettings> {
   const stored = await readValue<Partial<AppSettings>>(SETTINGS_KEY);
-  return { ...defaultSettings, ...(stored ?? {}), layouts: stored?.layouts ?? {} };
+  const legacyPrinciple = (await allItems())
+    .filter((item) => item.kind === "discipline")
+    .map((item) => item.title.trim())
+    .filter(Boolean)
+    .join("。")
+    .replace(/。+/g, "。")
+    .replace(/。?$/, "。");
+  const settings = {
+    ...defaultSettings,
+    ...(stored ?? {}),
+    principle: typeof stored?.principle === "string" ? stored.principle : legacyPrinciple || defaultSettings.principle,
+    layouts: stored?.layouts ?? {},
+  };
+  if (typeof stored?.principle !== "string") await writeValue(SETTINGS_KEY, settings);
+  return settings;
 }
 
 export async function saveSettings(settings: AppSettings) {
