@@ -1,7 +1,6 @@
 param(
-  [Parameter(Mandatory = $true)]
   [ValidatePattern('^[a-p]{32}$')]
-  [string]$ExtensionId
+  [string]$ExtensionId = "dhlpgdmpmcenijihielpijhmjnjmcboi"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +12,7 @@ $manifestPath = Join-Path $installDir "com.schedulepin.helper.json"
 $hostName = "com.schedulepin.helper"
 
 if (-not (Test-Path -LiteralPath $sourceExe -PathType Leaf)) {
-  throw "没有找到已构建的助手。请先运行 npm run helper:build。"
+  throw "The built helper was not found. Run npm run helper:build first."
 }
 
 New-Item -ItemType Directory -Path $installDir -Force | Out-Null
@@ -42,10 +41,12 @@ foreach ($key in $browserKeys) {
 }
 
 $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-New-Item -Path $runKey -Force | Out-Null
+if (-not (Test-Path -Path $runKey)) {
+  New-Item -Path $runKey -Force | Out-Null
+}
 Set-ItemProperty -Path $runKey -Name "SchedulePinHelper" -Value ('"{0}" --daemon' -f $installedExe)
 Start-Process -FilePath $installedExe -ArgumentList "--daemon" -WindowStyle Hidden
 
-Write-Host "SchedulePin 桌面助手已安装。"
-Write-Host "允许访问的扩展 ID：$ExtensionId"
-Write-Host "请在 Chrome 或 Edge 的扩展管理页重新加载 SchedulePin。"
+Write-Host "The SchedulePin desktop helper is installed."
+Write-Host "Allowed extension ID: $ExtensionId"
+Write-Host "Reload SchedulePin on the Chrome or Edge extensions page."

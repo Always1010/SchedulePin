@@ -118,3 +118,23 @@
 - 解决方案：将模块改名为 `Principle`，作为设置中的独立段落保存；移除勾选、完成数量和逐条添加入口，并把旧纪律内容自动合并迁移。浏览器页面和桌面壁纸使用同一段原则文本。
 - 验证方式：TypeScript 类型检查与 Rust 助手测试通过；原则不再出现在任务集合中，也不参与完成度和归档流程。
 - 相关文件：`src/types.ts`、`src/data.ts`、`src/App.tsx`、`src/components/AddItemDialog.tsx`、`src/components/SettingsPanel.tsx`、`src/styles.css`、`public/service-worker.js`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`
+
+## SP-013：本地助手联调要求手动复制扩展 ID
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：每次测试浏览器扩展与桌面助手时，都要求用户进入扩展管理页复制 32 位 ID 并作为安装参数，步骤繁琐且容易填错。
+- 原因分析：Native Messaging 的 `allowed_origins` 必须包含确切扩展来源且不能使用通配符；开发版又没有固定 `manifest.key`，导致扩展 ID 被暴露为手工配置。
+- 解决方案：为本地开发版加入固定公钥，使 Chrome/Edge 加载解压扩展时获得稳定 ID；安装脚本内置该开发 ID，并新增无参数 `npm run test:local`，自动完成构建、测试、注册和隔离 Edge 启动。安全白名单继续保留，但不再要求用户处理。
+- 验证方式：确认清单公钥推导出的 ID 与安装脚本默认 ID一致；PowerShell 脚本语法检查、前端生产构建、助手单元测试和 Native Messaging 冒烟测试通过。
+- 相关文件：`public/manifest.json`、`scripts/install-helper.ps1`、`scripts/test-local.ps1`、`package.json`、`README.md`
+
+## SP-014：Windows PowerShell 5.1 无法完成助手安装
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：无参数联调首次运行到助手注册阶段时，Windows PowerShell 5.1 无法正确解析 UTF-8 无 BOM 脚本中的中文文本；处理编码后，在已经存在的当前用户 `Run` 注册表键上再次执行 `New-Item -Force` 又触发系统 I/O 异常。
+- 原因分析：旧版 Windows PowerShell 对 UTF-8 无 BOM 脚本按系统代码页解码；安装脚本同时对 Windows 默认存在的启动项父键做了不必要的强制重建。
+- 解决方案：安装与卸载脚本的控制台和异常文本改为 ASCII，并仅在 `Run` 键不存在时创建它，保留原有注册、开机启动与卸载行为。
+- 验证方式：在 Windows PowerShell 5.1 下完整执行 `npm run test:local` 成功；扩展生产构建、助手测试、Release 构建、Native Messaging 冒烟测试、注册和隔离 Edge 启动全部通过，并确认注册清单、助手 EXE 与后台进程均存在。
+- 相关文件：`scripts/install-helper.ps1`、`scripts/uninstall-helper.ps1`、`scripts/test-local.ps1`

@@ -39,6 +39,28 @@ Edge 的步骤相同，扩展管理地址是 `edge://extensions`。
 
 开发服务器 `npm run dev` 只用于快速预览 React 界面；普通网页没有扩展权限，因此不能验证新标签页、侧边栏或桌面助手连接。
 
+## 一键启动本地完整测试
+
+第一次使用先准备：
+
+- Windows 10/11 和 Microsoft Edge；
+- Node.js 22（包含 npm）；
+- Rust stable 工具链；
+- Rust MSVC 工具链需要 Visual Studio Build Tools 的“使用 C++ 的桌面开发”，GNU 工具链需要 MinGW GCC；
+- 在项目目录执行一次 `npm install` 安装前端依赖。
+
+之后无需填写扩展 ID 或其他参数，直接运行：
+
+```powershell
+npm run test:local
+```
+
+脚本会依次构建扩展、测试并构建助手、验证 Native Messaging、注册固定开发版助手，然后用独立测试配置启动 Edge 并自动加载 `dist`。在新打开的 Edge 中进入设置，点击“重新检测”即可继续测试桌面壁纸。
+
+扩展内部仍然使用 Chrome 要求的 `allowed_origins` 安全白名单，但开发版通过 `manifest.key` 获得固定 ID；该细节已经内置在脚本中，使用者不需要复制或传入 ID。测试浏览器数据保存在项目的 `.tools/edge-test-profile`，不会和日常 Edge 配置混用。
+
+直接双击 `schedulepin-helper.exe` 不会打开界面：它是由浏览器启动、通过标准输入输出通信的 Native Messaging Host。
+
 ## 测试桌面壁纸功能
 
 桌面功能需要 Rust 工具链。先构建并做只读测试：
