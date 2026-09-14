@@ -49,7 +49,7 @@ SchedulePin 不再把可交互 WebView 窗口伪装成桌面组件。产品拆�
 | `dnd-kit` | 提供跟随指针、相邻任务让位和键盘可访问的排序交互 |
 | GitHub Actions / Releases | 按版本标签构建插件、Windows 助手与校验文件 |
 | 固定开发扩展 ID | 通过 `manifest.key` 保持本地测试 ID 稳定，安装脚本无需用户传参 |
-| 本地测试脚本 | 不依赖 GitHub，自动注册助手并启动隔离 Edge 测试环境 |
+| 本地测试与 Release 脚本 | 不依赖 GitHub，启动隔离 Edge 测试环境或只产出助手 EXE |
 
 ## 3. 运行架构
 

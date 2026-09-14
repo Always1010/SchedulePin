@@ -3,6 +3,7 @@ dist/
 native-helper/target/
 .npm-cache/
 .tools/
+release/
 *.db
 *.db-shm
 *.db-wal

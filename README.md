@@ -61,6 +61,24 @@ npm run test:local
 
 直接双击 `schedulepin-helper.exe` 不会打开界面：它是由浏览器启动、通过标准输入输出通信的 Native Messaging Host。
 
+## 本地生成助手 Release
+
+不使用 GitHub 或任何云端构建服务时，运行：
+
+```powershell
+npm run release:local
+```
+
+这个脚本只测试和构建 Rust 助手，不打包插件、安装脚本或 ZIP。成功后输出目录中只有一个文件：
+
+```text
+release\local\schedulepin-helper.exe
+```
+
+本地 Release 需要 PowerShell、Node.js/npm（用于执行 npm 命令）、Rust stable，以及与 Rust 工具链匹配的 C/C++ 链接器。依赖安装完成后，构建过程不需要 GitHub；Rust 第一次下载尚未缓存的依赖时可能需要网络。
+
+仓库中的 GitHub Actions 是以后公开发布时的可选云端流程。它使用 GitHub 临时提供的 Windows Runner，不会调用本机；当前配置只在向 GitHub 推送 `v*` 标签时启动，不影响上述本地命令。
+
 ## 测试桌面壁纸功能
 
 桌面功能需要 Rust 工具链。先构建并做只读测试：
