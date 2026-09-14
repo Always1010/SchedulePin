@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SchedulePin",
+  "version": "0.1.0",
+  "identifier": "com.schedulepin.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "SchedulePin",
+        "width": 760,
+        "height": 820,
+        "minWidth": 380,
+        "minHeight": 600,
+        "decorations": false,
+        "transparent": true,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "shortDescription": "把今天真正重要的事钉在桌面上",
+    "longDescription": "SchedulePin 是一款轻量的 Windows 桌面计划板。"
+  }
+}
