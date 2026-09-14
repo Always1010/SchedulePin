@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$sourceExe = Join-Path $projectRoot "src-tauri\target\release\schedulepin-helper.exe"
+$sourceExe = Join-Path $projectRoot "native-helper\target\release\schedulepin-helper.exe"
 $installDir = Join-Path $env:LOCALAPPDATA "SchedulePin"
 $installedExe = Join-Path $installDir "schedulepin-helper.exe"
 $manifestPath = Join-Path $installDir "com.schedulepin.helper.json"

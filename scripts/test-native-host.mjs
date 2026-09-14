@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const executable = resolve("src-tauri/target/release/schedulepin-helper.exe");
+const executable = resolve("native-helper/target/release/schedulepin-helper.exe");
 const child = spawn(executable, [], { stdio: ["pipe", "pipe", "inherit"] });
 const request = Buffer.from(JSON.stringify({ type: "status", protocolVersion: 1 }), "utf8");
 const length = Buffer.alloc(4);

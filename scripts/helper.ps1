@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$manifest = Join-Path $projectRoot "src-tauri\Cargo.toml"
+$manifest = Join-Path $projectRoot "native-helper\Cargo.toml"
 $cargoBin = Join-Path $env:USERPROFILE ".cargo\bin"
 
 if (Test-Path -LiteralPath $cargoBin) {
