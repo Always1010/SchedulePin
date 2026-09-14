@@ -22,16 +22,19 @@ const starterItems = (): PlanItem[] => {
       id: `starter-task-${today}`, kind: "task", title: "写下今天最重要的一件事",
       scheduledDate: today, startTime: "09:00", endTime: "10:00", priority: 3,
       recurringDaily: false, sortOrder: 0, completed: false, createdAt,
+      completedDate: null,
     },
     {
       id: "starter-discipline", kind: "discipline", title: "开始新任务前，先完成当前任务",
       scheduledDate: today, startTime: null, endTime: null, priority: 1,
       recurringDaily: true, sortOrder: 1, completed: false, createdAt,
+      completedDate: null,
     },
     {
       id: `starter-note-${today}`, kind: "note", title: "想到其他事情时先记在这里，不急着切换。",
       scheduledDate: today, startTime: null, endTime: null, priority: 0,
       recurringDaily: false, sortOrder: 2, completed: false, createdAt,
+      completedDate: null,
     },
   ];
 };
@@ -63,7 +66,9 @@ async function allItems(): Promise<PlanItem[]> {
 }
 
 export async function loadItems(date = todayKey()): Promise<PlanItem[]> {
-  return (await allItems()).filter((item) => item.scheduledDate === date || item.recurringDaily);
+  return (await allItems())
+    .filter((item) => item.scheduledDate === date || item.recurringDaily)
+    .map((item) => item.recurringDaily ? { ...item, completed: item.completedDate === date } : item);
 }
 
 export async function loadAllItems(): Promise<PlanItem[]> {
@@ -77,15 +82,19 @@ export async function createItem(input: NewPlanItem): Promise<PlanItem> {
     scheduledDate: input.scheduledDate, startTime: input.startTime || null,
     endTime: input.endTime || null, priority: input.priority ?? (input.kind === "task" ? 2 : 0),
     recurringDaily: input.recurringDaily ?? input.kind === "discipline",
-    sortOrder: items.length, completed: false, createdAt: new Date().toISOString(),
+    sortOrder: items.length, completed: false, completedDate: null, createdAt: new Date().toISOString(),
   };
   await writeValue(ITEMS_KEY, [...items, item]);
   return item;
 }
 
-export async function setCompleted(id: string, _day: string, completed: boolean) {
+export async function setCompleted(id: string, day: string, completed: boolean) {
   const items = await allItems();
-  await writeValue(ITEMS_KEY, items.map((item) => item.id === id ? { ...item, completed } : item));
+  await writeValue(ITEMS_KEY, items.map((item) => item.id === id ? {
+    ...item,
+    completed,
+    completedDate: item.recurringDaily && completed ? day : null,
+  } : item));
 }
 
 export async function removeItem(id: string) {

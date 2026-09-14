@@ -11,6 +11,7 @@ export interface PlanItem {
   recurringDaily: boolean;
   sortOrder: number;
   completed: boolean;
+  completedDate: string | null;
   createdAt: string;
 }
 

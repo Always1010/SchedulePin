@@ -79,3 +79,12 @@
 - 解决方案：废弃可交互桌面窗口，将任务管理迁移到可独立运行的 Manifest V3 浏览器插件；桌面布局改在浏览器显示器预览中用百分比坐标编辑，真实桌面不再接收鼠标输入。本地助手作为后续独立提交提供可选壁纸生成能力。
 - 验证方式：`npm run build` 成功生成包含 `manifest.json`、Service Worker、新标签页和侧边栏资源的 `dist` 目录；浏览器独立模式不再调用 Tauri 窗口拖动接口。
 - 相关文件：`public/manifest.json`、`public/service-worker.js`、`src/App.tsx`、`src/components/DesktopLayoutEditor.tsx`、`src/components/SettingsPanel.tsx`、`src/data.ts`
+## SP-009：每日纪律完成状态不会按日期重置
+
+- 日期：2026-09-14
+- 状态：已解决
+- 现象或修改背景：浏览器插件初稿把完成状态直接存入每日重复条目，今天勾选的纪律会在第二天继续显示为已完成。
+- 原因分析：迁移到 `chrome.storage.local` 时删掉了原 SQLite 的按日完成记录，却没有补充轻量的日期字段。
+- 解决方案：为计划条目增加 `completedDate`；每日重复条目只在该日期与当前日期一致时显示完成，桌面助手渲染时采用相同规则。
+- 验证方式：前端生产构建和 Rust 测试通过；完成状态判断同时覆盖浏览器界面和壁纸渲染。
+- 相关文件：`src/types.ts`、`src/data.ts`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`

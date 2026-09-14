@@ -13,6 +13,8 @@ pub struct PlanItem {
     pub priority: i32,
     pub recurring_daily: bool,
     pub completed: bool,
+    #[serde(default)]
+    pub completed_date: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
