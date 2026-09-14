@@ -13,7 +13,7 @@ import {
   ListTodo, Plus, Settings, Trash2,
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
-import { ArchiveDialog } from "./components/ArchiveDialog";
+import { ArchivePage } from "./components/ArchivePage";
 import { SettingsPanel } from "./components/SettingsPanel";
 import {
   archiveItem, createItem, defaultSettings, loadArchivedItems, loadItems, loadSettings,
@@ -70,10 +70,10 @@ function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
 export default function App() {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [archived, setArchived] = useState<PlanItem[]>([]);
+  const [page, setPage] = useState<"main" | "archive">("main");
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [helper, setHelper] = useState<HelperStatus>({ connected: false, monitors: [] });
@@ -157,7 +157,7 @@ export default function App() {
 
   const openArchive = async () => {
     setArchived(await loadArchivedItems());
-    setArchiveOpen(true);
+    setPage("archive");
   };
 
   const restoreArchived = async (id: string) => {
@@ -192,7 +192,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="todo-main">
+      {page === "archive" ? (
+        <ArchivePage items={archived} onBack={() => setPage("main")} onRestore={restoreArchived} onDelete={remove} />
+      ) : <main className="todo-main">
         <section className="day-hero todo-hero">
           <div><span className="eyebrow">今天</span><h1>{dateLabel(new Date())}</h1><p>完成的任务会保留到今天结束，明天自动归档。</p></div>
           <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}>
@@ -237,11 +239,10 @@ export default function App() {
             <kbd>Enter</kbd>
           </form>
         </section>
-      </main>
+      </main>}
 
-      <button className="floating-add" onClick={() => setAddOpen(true)}><Plus size={20} /><span>添加</span></button>
+      {page === "main" && <button className="floating-add" onClick={() => setAddOpen(true)}><Plus size={20} /><span>添加</span></button>}
       <AddItemDialog open={addOpen} date={today} onClose={() => setAddOpen(false)} onSubmit={add} />
-      <ArchiveDialog open={archiveOpen} items={archived} onClose={() => setArchiveOpen(false)} onRestore={restoreArchived} onDelete={remove} />
       <SettingsPanel open={settingsOpen} settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onClose={() => setSettingsOpen(false)} />
     </div>
   );

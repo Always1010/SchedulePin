@@ -22,7 +22,7 @@ const starterItems = (): PlanItem[] => {
       id: `starter-task-${today}`, kind: "task", title: "写下今天最重要的一件事",
       scheduledDate: today, startTime: "09:00", endTime: "10:00", priority: 3,
       recurringDaily: false, sortOrder: 0, completed: false, createdAt,
-      completedDate: null, archivedAt: null,
+      completedDate: null, completedAt: null, archivedAt: null,
     },
   ];
 };
@@ -58,12 +58,13 @@ async function preparedItems(date: string): Promise<PlanItem[]> {
   let changed = false;
   const prepared = stored.map((item) => {
     const completedDate = item.completed ? item.completedDate ?? date : null;
+    const completedAt = item.completed ? item.completedAt ?? (completedDate ? `${completedDate}T23:59:59` : null) : null;
     let archivedAt = item.archivedAt ?? null;
     if (item.kind === "task" && item.completed && completedDate && completedDate < date && !archivedAt) {
       archivedAt = completedDate;
     }
-    if (completedDate !== item.completedDate || archivedAt !== item.archivedAt) changed = true;
-    return { ...item, completedDate, archivedAt };
+    if (completedDate !== item.completedDate || completedAt !== item.completedAt || archivedAt !== item.archivedAt) changed = true;
+    return { ...item, completedDate, completedAt, archivedAt };
   });
   if (changed) await writeValue(ITEMS_KEY, prepared);
   return prepared;
@@ -87,7 +88,7 @@ export async function createItem(input: NewPlanItem): Promise<PlanItem> {
     scheduledDate: input.scheduledDate, startTime: input.startTime || null,
     endTime: input.endTime || null, priority: input.priority ?? 0,
     recurringDaily: input.recurringDaily ?? input.kind === "discipline",
-    sortOrder: items.length, completed: false, completedDate: null, archivedAt: null, createdAt: new Date().toISOString(),
+    sortOrder: items.length, completed: false, completedDate: null, completedAt: null, archivedAt: null, createdAt: new Date().toISOString(),
   };
   await writeValue(ITEMS_KEY, [...items, item]);
   return item;
@@ -99,6 +100,7 @@ export async function setCompleted(id: string, day: string, completed: boolean) 
     ...item,
     completed,
     completedDate: completed ? day : null,
+    completedAt: completed ? new Date().toISOString() : null,
   } : item));
 }
 
@@ -117,7 +119,7 @@ export async function archiveItem(id: string) {
 
 export async function restoreItem(id: string) {
   await writeValue(ITEMS_KEY, (await allItems()).map((item) => (
-    item.id === id ? { ...item, archivedAt: null, completed: false, completedDate: null } : item
+    item.id === id ? { ...item, archivedAt: null, completed: false, completedDate: null, completedAt: null } : item
   )));
 }
 

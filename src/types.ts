@@ -12,6 +12,7 @@ export interface PlanItem {
   sortOrder: number;
   completed: boolean;
   completedDate: string | null;
+  completedAt: string | null;
   archivedAt: string | null;
   createdAt: string;
 }

@@ -18,6 +18,8 @@ pub struct PlanItem {
     #[serde(default)]
     pub completed_date: Option<String>,
     #[serde(default)]
+    pub completed_at: Option<String>,
+    #[serde(default)]
     pub archived_at: Option<String>,
 }
 
