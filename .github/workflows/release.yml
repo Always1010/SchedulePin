@@ -13,6 +13,7 @@ jobs:
   build-installer:
     name: Build and verify Windows installer
     runs-on: windows-2022
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +22,32 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
+
+      - name: Report runner build tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          rustc --version
+          cargo --version
+
+          $isccCommand = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+          $isccPath = if ($isccCommand) { $isccCommand.Source } else { $null }
+          if (-not $isccPath) {
+            foreach ($root in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+              if (-not $root) { continue }
+              $candidate = Join-Path $root "Inno Setup 6\ISCC.exe"
+              if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $isccPath = $candidate
+                break
+              }
+            }
+          }
+          if (-not $isccPath) {
+            throw "ISCC.exe was not found on the GitHub runner."
+          }
+          $isccVersion = (Get-Item -LiteralPath $isccPath).VersionInfo.ProductVersion
+          Write-Host "Inno Setup compiler: $isccPath"
+          Write-Host "Inno Setup version: $isccVersion"
 
       - name: Validate release tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -39,6 +66,23 @@ jobs:
       - name: Smoke test installer
         shell: pwsh
         run: |
+          function Wait-ForSingleProcess {
+            param(
+              [Parameter(Mandatory = $true)]
+              [System.Diagnostics.Process]$Process,
+              [Parameter(Mandatory = $true)]
+              [string]$Name,
+              [int]$TimeoutSeconds = 120
+            )
+
+            if (-not $Process.WaitForExit($TimeoutSeconds * 1000)) {
+              Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+              throw "$Name timed out after $TimeoutSeconds seconds."
+            }
+            $Process.Refresh()
+            return $Process.ExitCode
+          }
+
           $setupPath = (Resolve-Path "release/local/SchedulePin-Helper-Setup.exe").Path
           $setupLog = Join-Path $env:RUNNER_TEMP "schedulepin-setup.log"
           $setup = Start-Process -FilePath $setupPath -ArgumentList @(
@@ -46,10 +90,11 @@ jobs:
             "/SUPPRESSMSGBOXES",
             "/NORESTART",
             "/LOG=$setupLog"
-          ) -Wait -PassThru
-          if ($setup.ExitCode -ne 0) {
+          ) -PassThru
+          $setupExitCode = Wait-ForSingleProcess -Process $setup -Name "Installer"
+          if ($setupExitCode -ne 0) {
             Get-Content $setupLog -ErrorAction SilentlyContinue
-            throw "Installer exited with code $($setup.ExitCode)."
+            throw "Installer exited with code $setupExitCode."
           }
 
           $installDir = Join-Path $env:LOCALAPPDATA "Programs\SchedulePin Helper"
@@ -87,9 +132,10 @@ jobs:
             "/VERYSILENT",
             "/SUPPRESSMSGBOXES",
             "/NORESTART"
-          ) -Wait -PassThru
-          if ($uninstall.ExitCode -ne 0) {
-            throw "Uninstaller exited with code $($uninstall.ExitCode)."
+          ) -PassThru
+          $uninstallExitCode = Wait-ForSingleProcess -Process $uninstall -Name "Uninstaller"
+          if ($uninstallExitCode -ne 0) {
+            throw "Uninstaller exited with code $uninstallExitCode."
           }
           if (Test-Path "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName") {
             throw "Chrome Native Messaging registration remained after uninstall."

@@ -138,3 +138,13 @@
 - 解决方案：安装与卸载脚本的控制台和异常文本改为 ASCII，并仅在 `Run` 键不存在时创建它，保留原有注册、开机启动与卸载行为。
 - 验证方式：在 Windows PowerShell 5.1 下完整执行 `npm run test:local` 成功；扩展生产构建、助手测试、Release 构建、Native Messaging 冒烟测试、注册和隔离 Edge 启动全部通过，并确认注册清单、助手 EXE 与后台进程均存在。
 - 相关文件：`scripts/install-helper.ps1`、`scripts/uninstall-helper.ps1`、`scripts/test-local.ps1`
+
+## SP-015：远程安装冒烟测试等待后台进程直至六小时超时
+
+- 日期：2026-09-15
+- 状态：已解决
+- 现象或修改背景：手动运行 `Build Helper Installer` 时，Rust 配置和安装程序构建均成功，但 `Smoke test installer` 持续运行六小时，最终达到 GitHub Actions 上限并被取消，安装产物没有上传。
+- 原因分析：冒烟测试使用 `Start-Process -Wait` 等待 Setup；该参数会等待 Setup 及其所有后代进程，而安装程序会启动长期运行的 `schedulepin-helper.exe --daemon`，因此等待永远不会自然结束。
+- 解决方案：改用 `System.Diagnostics.Process.WaitForExit` 只等待 Setup 或 Uninstaller 自身，并为两者设置 120 秒超时；同时把整个 Windows Job 限制为 15 分钟，并在构建前输出 Rust、Cargo 和 Inno Setup 的实际版本与路径。
+- 验证方式：GitHub Actions API 显示失败运行中 `Build helper installer` 在约两分钟内成功，唯一超时步骤为 `Smoke test installer`；本地进程树回归检查确认新的单进程等待不会等待父进程启动的长驻子进程，PowerShell 和工作流静态检查通过。
+- 相关文件：`.github/workflows/release.yml`
