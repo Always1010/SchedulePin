@@ -86,12 +86,16 @@ main::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(86, 93, 83,
 .task-row { min-height: 58px; display: flex; align-items: center; gap: 11px; padding: 9px 10px 9px 5px; border-radius: 13px; border: 1px solid transparent; transition: .18s ease; }
 .task-row:hover { background: rgba(255,255,255,.72); border-color: var(--line); }
 .task-row.completed { opacity: .55; }
-.task-row.completed .task-copy strong { text-decoration: line-through; }
+.task-row.completed .task-copy strong, .task-row.completed .task-title-button { text-decoration: line-through; }
 .grip { color: #c7c8c2; cursor: grab; }
 .check-button { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 7px; border: 1.5px solid #bdc0b8; background: rgba(255,255,255,.6); cursor: pointer; display: grid; place-items: center; color: white; padding: 0; }
 .check-button.checked { background: #739485; border-color: #739485; }
 .task-copy { min-width: 0; flex: 1; display: grid; gap: 3px; }
 .task-copy strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-title-button, .task-title-input { min-width: 0; width: 100%; margin: 0; padding: 2px 4px; border: 0; border-radius: 5px; color: inherit; background: transparent; font: inherit; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: left; }
+.task-title-button { overflow: hidden; cursor: text; text-overflow: ellipsis; white-space: nowrap; }
+.task-title-button:hover { background: rgba(111,146,130,.08); }
+.task-title-input { outline: 0; background: rgba(255,255,255,.82); box-shadow: 0 0 0 2px rgba(111,146,130,.2); }
 .task-copy span { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; }
 .priority { font-size: 9px; padding: 3px 6px; border-radius: 5px; }
 .priority-3 { background: #fae1db; color: #ae5946; }
@@ -390,7 +394,7 @@ main::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(86, 93, 83,
 .app .principle-copy { font-size: calc(14px * var(--principle-font-scale)); }
 .app .principle-heading h2 { font-size: calc(18px * var(--principle-font-scale)); }
 .app .todo-heading h2 { font-size: calc(18px * var(--font-scale)); }
-.app .task-copy strong, .app .quick-add input { font-size: calc(13px * var(--font-scale)); }
+.app .task-copy strong, .app .task-title-button, .app .task-title-input, .app .quick-add input { font-size: calc(13px * var(--font-scale)); }
 .app .task-copy span, .app button, .app input, .app textarea { font-size: calc(11px * var(--font-scale)); }
 .principle-spotlight, .todo-card, .settings-card, .archive-group > div { border-radius: var(--card-radius); }
 
@@ -417,6 +421,8 @@ main::-webkit-scrollbar-thumb { border-radius: 5px; background: rgba(86, 93, 83,
 .theme-dark .progress-ring::before { background: #1f2623; }
 .theme-dark .todo-card, .theme-dark .settings-card, .theme-dark .archive-group > div { border-color: rgba(255,255,255,.07); background: rgba(43,51,47,.78); }
 .theme-dark .task-row:hover, .theme-dark .task-row.dragging { background: rgba(255,255,255,.06); }
+.theme-dark .task-title-button:hover { background: rgba(255,255,255,.05); }
+.theme-dark .task-title-input { background: rgba(17,22,20,.72); }
 .theme-dark .quick-add, .theme-dark .archive-search, .theme-dark .settings-textarea { border-color: rgba(255,255,255,.09); color: var(--ink); background: rgba(17,22,20,.43); }
 .theme-dark .quick-add:focus-within, .theme-dark .archive-search:focus-within { background: rgba(17,22,20,.7); }
 .theme-dark .quick-add kbd { border-color: #48524d; color: #a9b2ad; background: #303a35; }

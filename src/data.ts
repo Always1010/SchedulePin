@@ -104,6 +104,14 @@ export async function setCompleted(id: string, day: string, completed: boolean) 
   } : item));
 }
 
+export async function updateItemTitle(id: string, title: string) {
+  const nextTitle = title.trim();
+  if (!nextTitle) return;
+  await writeValue(ITEMS_KEY, (await allItems()).map((item) => (
+    item.id === id ? { ...item, title: nextTitle } : item
+  )));
+}
+
 export async function saveTaskOrder(ids: string[]) {
   const order = new Map(ids.map((id, index) => [id, index]));
   await writeValue(ITEMS_KEY, (await allItems()).map((item) => (

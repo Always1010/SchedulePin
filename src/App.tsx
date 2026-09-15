@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   closestCenter, DndContext, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -19,6 +19,7 @@ import { SettingsPage } from "./components/SettingsPage";
 import {
   archiveItem, createItem, defaultSettings, loadArchivedItems, loadItems, loadSettings,
   removeItem, restoreItem, saveSettings, saveTaskOrder, setCompleted, subscribeStorage, todayKey,
+  updateItemTitle,
 } from "./data";
 import { queryHelper, restoreWallpaper, syncDesktop } from "./native";
 import type { AppSettings, HelperStatus, NewPlanItem, PlanItem } from "./types";
@@ -37,12 +38,43 @@ function CheckButton({ checked, onClick }: { checked: boolean; onClick: () => vo
 interface TaskRowProps {
   item: PlanItem;
   onToggle: () => void;
+  onRename: (title: string) => Promise<void>;
   onDelete: () => void;
   onArchive: () => void;
 }
 
-function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
+function TaskRow({ item, onToggle, onRename, onDelete, onArchive }: TaskRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(item.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  useEffect(() => {
+    if (!editing) setTitle(item.title);
+  }, [editing, item.title]);
+
+  useEffect(() => {
+    if (editing) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }
+  }, [editing]);
+
+  const finishEditing = async () => {
+    const nextTitle = title.trim();
+    setEditing(false);
+    if (!nextTitle) {
+      setTitle(item.title);
+      return;
+    }
+    if (nextTitle !== item.title) await onRename(nextTitle);
+  };
+
+  const cancelEditing = () => {
+    setTitle(item.title);
+    setEditing(false);
+  };
+
   return (
     <article
       ref={setNodeRef}
@@ -60,7 +92,29 @@ function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
       ><GripVertical size={16} /></button>
       <CheckButton checked={item.completed} onClick={onToggle} />
       <div className="task-copy">
-        <strong>{item.title}</strong>
+        {editing ? (
+          <input
+            ref={titleInputRef}
+            className="task-title-input"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onBlur={finishEditing}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                cancelEditing();
+              }
+            }}
+            aria-label={`编辑任务：${item.title}`}
+          />
+        ) : (
+          <button type="button" className="task-title-button" onClick={() => setEditing(true)} title="单击编辑任务">
+            {item.title}
+          </button>
+        )}
         {(item.startTime || item.endTime) && <span><Clock3 size={13} />{item.startTime || "--:--"}{item.endTime ? ` — ${item.endTime}` : ""}</span>}
       </div>
       {item.completed && <button type="button" className="archive-task-button" onClick={onArchive} aria-label={`归档 ${item.title}`} title="立即归档"><Archive size={14} /></button>}
@@ -123,6 +177,11 @@ export default function App() {
   const toggle = async (item: PlanItem) => {
     setItems((current) => current.map((row) => row.id === item.id ? { ...row, completed: !row.completed, completedDate: !row.completed ? today : null } : row));
     await setCompleted(item.id, today, !item.completed);
+  };
+
+  const rename = async (id: string, title: string) => {
+    setItems((current) => current.map((item) => item.id === id ? { ...item, title } : item));
+    await updateItemTitle(id, title);
   };
 
   const remove = async (id: string) => {
@@ -262,6 +321,7 @@ export default function App() {
                       key={item.id}
                       item={item}
                       onToggle={() => toggle(item)}
+                      onRename={(title) => rename(item.id, title)}
                       onDelete={() => remove(item.id)}
                       onArchive={() => archiveTask(item.id)}
                     />
