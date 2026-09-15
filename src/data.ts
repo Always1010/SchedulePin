@@ -145,6 +145,7 @@ export const defaultSettings: AppSettings = {
   fontFamily: "modern",
   fontScale: 1,
   density: "comfortable",
+  densityLevel: 50,
   cardRadius: 20,
   opacity: 0.86,
   displayMode: "single",
@@ -155,6 +156,12 @@ export const defaultSettings: AppSettings = {
 
 export async function loadSettings(): Promise<AppSettings> {
   const stored = await readValue<Partial<AppSettings>>(SETTINGS_KEY);
+  const storedDensity = (stored as { density?: unknown } | null)?.density;
+  const storedDensityLevel = (stored as { densityLevel?: unknown } | null)?.densityLevel;
+  const densityLevel = typeof storedDensityLevel === "number"
+    ? Math.min(100, Math.max(0, storedDensityLevel))
+    : ({ compact: 0, comfortable: 50, spacious: 100 } as Record<string, number>)[String(storedDensity)] ?? defaultSettings.densityLevel;
+  const density: AppSettings["density"] = densityLevel < 34 ? "compact" : densityLevel > 66 ? "spacious" : "comfortable";
   const legacyPrinciple = (await allItems())
     .filter((item) => item.kind === "discipline")
     .map((item) => item.title.trim())
@@ -166,9 +173,11 @@ export async function loadSettings(): Promise<AppSettings> {
     ...defaultSettings,
     ...(stored ?? {}),
     principle: typeof stored?.principle === "string" ? stored.principle : legacyPrinciple || defaultSettings.principle,
+    density,
+    densityLevel,
     layouts: stored?.layouts ?? {},
   };
-  if (typeof stored?.principle !== "string") await writeValue(SETTINGS_KEY, settings);
+  if (typeof stored?.principle !== "string" || storedDensity !== density || storedDensityLevel !== densityLevel) await writeValue(SETTINGS_KEY, settings);
   return settings;
 }
 

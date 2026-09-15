@@ -55,6 +55,7 @@ export interface AppSettings {
   fontFamily: "system" | "modern" | "reading" | "rounded";
   fontScale: number;
   density: "compact" | "comfortable" | "spacious";
+  densityLevel: number;
   cardRadius: number;
   opacity: number;
   displayMode: "single" | "all";

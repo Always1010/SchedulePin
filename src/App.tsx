@@ -260,7 +260,7 @@ export default function App() {
     window.open(fullPageUrl, "_blank", "noopener,noreferrer");
   };
 
-  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} density-${settings.density} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
+  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
 
   return (
     <div

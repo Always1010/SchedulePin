@@ -44,7 +44,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
     .slice(0, 5), [items]);
   const completed = tasks.filter((item) => item.completed).length;
   const progress = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-  const appearanceClass = `theme-${draft.theme} font-${draft.fontFamily} density-${draft.density} principle-theme-${draft.principleTheme} principle-font-${draft.principleFontFamily} principle-style-${draft.principleTextStyle}`;
+  const appearanceClass = `theme-${draft.theme} font-${draft.fontFamily} principle-theme-${draft.principleTheme} principle-font-${draft.principleFontFamily} principle-style-${draft.principleTextStyle}`;
 
   const resetAppearance = () => setDraft((current) => ({
     ...current,
@@ -52,6 +52,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
     fontFamily: defaultSettings.fontFamily,
     fontScale: defaultSettings.fontScale,
     density: defaultSettings.density,
+    densityLevel: defaultSettings.densityLevel,
     cardRadius: defaultSettings.cardRadius,
     principleTheme: defaultSettings.principleTheme,
     principleFontFamily: defaultSettings.principleFontFamily,
@@ -101,14 +102,13 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
             <div className="range-heading"><span>全局文字大小</span><strong>{Math.round(draft.fontScale * 100)}%</strong></div>
             <input className="range" type="range" min="0.85" max="1.25" step="0.05" value={draft.fontScale} onChange={(event) => setDraft({ ...draft, fontScale: Number(event.target.value) })} />
 
-            <label className="settings-control-label"><AlignJustify size={14} />界面密度</label>
-            <div className="density-options segmented">
-              {(["compact", "comfortable", "spacious"] as const).map((value) => (
-                <button type="button" key={value} className={draft.density === value ? "active" : ""} onClick={() => setDraft({ ...draft, density: value })}>
-                  {{ compact: "紧凑", comfortable: "标准", spacious: "宽松" }[value]}
-                </button>
-              ))}
-            </div>
+            <div className="range-heading density-range-heading"><span><AlignJustify size={14} />布局间距</span><strong>{Math.round(draft.densityLevel)}%</strong></div>
+            <input className="range density-range" type="range" min="0" max="100" step="5" value={draft.densityLevel} onChange={(event) => {
+              const densityLevel = Number(event.target.value);
+              const density = densityLevel < 34 ? "compact" : densityLevel > 66 ? "spacious" : "comfortable";
+              setDraft({ ...draft, density, densityLevel });
+            }} aria-label="布局间距" />
+            <div className="range-scale" aria-hidden="true"><span>更紧凑</span><span>更宽松</span></div>
 
             <div className="range-heading"><span>卡片圆角</span><strong>{draft.cardRadius}px</strong></div>
             <input className="range" type="range" min="8" max="30" step="1" value={draft.cardRadius} onChange={(event) => setDraft({ ...draft, cardRadius: Number(event.target.value) })} />

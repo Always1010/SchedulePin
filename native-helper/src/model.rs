@@ -64,6 +64,8 @@ pub struct AppSettings {
     pub font_scale: f64,
     #[serde(default)]
     pub density: String,
+    #[serde(default = "default_density_level")]
+    pub density_level: f64,
     #[serde(default = "default_card_radius")]
     pub card_radius: f64,
     pub opacity: f64,
@@ -75,6 +77,7 @@ pub struct AppSettings {
 }
 
 fn default_font_scale() -> f64 { 1.0 }
+fn default_density_level() -> f64 { 50.0 }
 fn default_card_radius() -> f64 { 20.0 }
 fn default_principle_theme() -> String { "forest".into() }
 fn default_principle_font_family() -> String { "modern".into() }

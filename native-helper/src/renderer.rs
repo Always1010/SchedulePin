@@ -155,11 +155,8 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
     let body_size = (width * 0.022).clamp(13.0, 18.0) * font_scale;
     let small_size = (body_size * 0.72).max(9.0);
     let card_radius = snapshot.settings.card_radius.clamp(8.0, 30.0);
-    let section_gap = match snapshot.settings.density.as_str() {
-        "compact" => body_size * 0.8,
-        "spacious" => body_size * 1.35,
-        _ => body_size,
-    };
+    let density = snapshot.settings.density_level.clamp(0.0, 100.0) / 100.0;
+    let section_gap = body_size * (0.8 + density * 0.55);
 
     let brand_mark = body_size * 1.8;
     let brand_top = y + padding * 0.75;
@@ -267,11 +264,7 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
     let todo_heading_y = todo_top + todo_padding + body_size;
     let todo_subtitle_y = todo_heading_y + small_size * 1.35;
     let rows_top = todo_subtitle_y + small_size * 1.3;
-    let minimum_row_height = match snapshot.settings.density.as_str() {
-        "compact" => body_size * 2.15,
-        "spacious" => body_size * 3.05,
-        _ => body_size * 2.58,
-    };
+    let minimum_row_height = body_size * (2.15 + density * 0.9);
     let available_height = (todo_bottom - todo_top).max(0.0);
     let title_width = content_width - todo_padding * 2.0;
     let title_line_height = body_size * 1.38;
@@ -420,7 +413,8 @@ mod tests {
                 principle: "完成当前任务再开始下一项。".into(), theme: "warm".into(), font_family: "modern".into(),
                 principle_theme: "forest".into(), principle_font_family: "modern".into(),
                 principle_font_scale: 1.0, principle_text_style: "regular".into(),
-                font_scale: 1.0, density: "comfortable".into(), card_radius: 20.0, opacity: 0.86,
+                font_scale: 1.0, density: "comfortable".into(), density_level: 50.0,
+                card_radius: 20.0, opacity: 0.86,
                 display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new(),
             },
         }

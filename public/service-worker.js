@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   fontFamily: "modern",
   fontScale: 1,
   density: "comfortable",
+  densityLevel: 50,
   cardRadius: 20,
   opacity: 0.86,
   displayMode: "single",
@@ -37,12 +38,19 @@ async function snapshot() {
   const stored = await chrome.storage.local.get([ITEMS_KEY, SETTINGS_KEY]);
   const now = new Date();
   const date = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+  const storedSettings = stored[SETTINGS_KEY] || {};
+  const settings = { ...DEFAULT_SETTINGS, ...storedSettings };
+  const legacyLevels = { compact: 0, comfortable: 50, spacious: 100 };
+  settings.densityLevel = typeof storedSettings.densityLevel === "number"
+    ? Math.min(100, Math.max(0, storedSettings.densityLevel))
+    : legacyLevels[settings.density] ?? DEFAULT_SETTINGS.densityLevel;
+  settings.density = settings.densityLevel < 34 ? "compact" : settings.densityLevel > 66 ? "spacious" : "comfortable";
   return {
     protocolVersion: 1,
     date,
     generatedAt: now.toISOString(),
     items: (stored[ITEMS_KEY] || []).filter((item) => !item.archivedAt && item.kind !== "note"),
-    settings: { ...DEFAULT_SETTINGS, ...(stored[SETTINGS_KEY] || {}) },
+    settings,
   };
 }
 

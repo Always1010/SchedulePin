@@ -188,3 +188,13 @@
 - 解决方案：按网页结构重做 SVG 壁纸，依次渲染品牌栏、中文日期与完成进度环、独立 Principle 卡片和 To-Do 卡片；网页和桌面共同读取一份视觉设计配置，桌面端使用独立的响应式字号映射，按中英文占宽完整换行，并根据正文和任务标题行数计算卡片与任务行高度。静态桌面仅移除编辑、归档、删除、拖动、输入和勾选控件，保留任务标题、时间及完成删除线；超出可读容量的任务显示剩余数量，不裁切已显示内容。桌面布局缩略预览同步采用相同层级和设计配置。
 - 验证方式：前端生产构建与桌面助手 5 项测试通过，其中新增中文不丢字换行和桌面字号语义映射测试；使用当前 1920×1080 横屏与 1440×2560 竖屏实际生成 PNG，确认 Principle 三段正文和四条任务均完整位于各自卡片内。
 - 相关文件：`shared/visual-design.json`、`native-helper/src/renderer.rs`、`src/visualDesign.ts`、`src/App.tsx`、`src/components/AppearanceEditor.tsx`、`src/components/DesktopLayoutEditor.tsx`、`src/components/SettingsPage.tsx`、`src/styles.css`、`README.md`、`docs/ARCHITECTURE.md`
+
+## SP-020：界面密度选项对布局影响不明显
+
+- 日期：2026-09-15
+- 状态：已解决
+- 现象或修改背景：外观页提供“紧凑、标准、宽松”三档界面密度，但只改变少数固定尺寸，主页的大部分留白和卡片间距不随设置变化，用户难以观察到效果。
+- 原因分析：密度通过三个 CSS 类零散覆盖任务行高和卡片上下内边距，没有形成统一的布局参数；预览与真实页面也只共享了其中一部分规则。
+- 解决方案：将界面密度改为 0–100、步长为 5 的布局间距滑条，由同一个连续数值插值生成页面留白、区块间距、卡片内边距、正文行高、任务行高和快速输入框间距；真实页面、侧边栏、实时预览及桌面壁纸共用对应数值。旧三档设置自动迁移到 0、50、100，同时保留兼容字段供已安装的旧版桌面助手读取。
+- 验证方式：前端生产构建通过；滑条两端会生成不同的布局变量和桌面渲染间距，旧三档存储值可迁移为对应数值且同步数据仍包含旧助手可识别的密度字段。
+- 相关文件：`src/types.ts`、`src/data.ts`、`src/visualDesign.ts`、`src/App.tsx`、`src/components/AppearanceEditor.tsx`、`src/components/SettingsPage.tsx`、`src/styles.css`、`public/service-worker.js`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`
