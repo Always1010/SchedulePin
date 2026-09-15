@@ -9,6 +9,7 @@ import { defaultDesktopLayout, DesktopLayoutEditor } from "./DesktopLayoutEditor
 interface Props {
   settings: AppSettings;
   helper: HelperStatus;
+  initialSection?: SettingsSection;
   onChange: (settings: AppSettings) => void;
   onRefreshHelper: () => void;
   onRestoreWallpaper: () => void;
@@ -16,16 +17,19 @@ interface Props {
   onBack: () => void;
 }
 
+type SettingsSection = "hub" | "principle" | "desktop";
+
 const previewMonitor: MonitorInfo = {
   id: "preview", index: 0, name: "显示器预览", x: 0, y: 0,
   width: 1920, height: 1080, primary: true,
 };
 const releasesUrl = "https://github.com/Always1010/SchedulePin/releases";
 
-export function SettingsPage({ settings, helper, onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onBack }: Props) {
-  const [section, setSection] = useState<"hub" | "principle" | "desktop">("hub");
+export function SettingsPage({ settings, helper, initialSection = "hub", onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onBack }: Props) {
+  const [section, setSection] = useState<SettingsSection>(initialSection);
   const [draft, setDraft] = useState(settings);
   useEffect(() => setDraft(settings), [settings]);
+  useEffect(() => setSection(initialSection), [initialSection]);
 
   const monitors = helper.monitors.length ? helper.monitors : [previewMonitor];
   const activeMonitor = useMemo(() => monitors.find((monitor) => monitor.id === draft.selectedMonitorId) ?? monitors[0], [monitors, draft.selectedMonitorId]);

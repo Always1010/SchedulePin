@@ -71,7 +71,7 @@ function TaskRow({ item, onToggle, onDelete, onArchive }: TaskRowProps) {
 export default function App() {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [archived, setArchived] = useState<PlanItem[]>([]);
-  const [page, setPage] = useState<"main" | "archive" | "settings" | "appearance">("main");
+  const [page, setPage] = useState<"main" | "archive" | "settings" | "principle" | "appearance">("main");
   const [loading, setLoading] = useState(true);
   const [quickTitle, setQuickTitle] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -106,7 +106,7 @@ export default function App() {
   }, [settings]);
 
   useEffect(() => {
-    if (page === "settings") refreshHelper();
+    if (page === "settings" || page === "principle") refreshHelper();
   }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tasks = useMemo(() => items
@@ -206,8 +206,8 @@ export default function App() {
           onSave={async (next) => { await updateSettings(next); setPage("settings"); }}
           onCancel={() => setPage("settings")}
         />
-      ) : page === "settings" ? (
-        <SettingsPage settings={settings} helper={helper} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onOpenAppearance={() => setPage("appearance")} onBack={() => setPage("main")} />
+      ) : page === "settings" || page === "principle" ? (
+        <SettingsPage settings={settings} helper={helper} initialSection={page === "principle" ? "principle" : "hub"} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onOpenAppearance={() => setPage("appearance")} onBack={() => setPage("main")} />
       ) : <main className="todo-main">
         <section className="day-hero todo-hero">
           <div><span className="eyebrow">今天</span><h1>{dateLabel(new Date())}</h1><p>完成的任务会保留到今天结束，明天自动归档。</p></div>
@@ -220,7 +220,7 @@ export default function App() {
           <div className="principle-heading">
             <span className="principle-mark"><BookOpenText size={19} /></span>
             <div><span className="eyebrow">How I work</span><h2>Principle</h2></div>
-            <button type="button" onClick={() => setPage("settings")}>编辑</button>
+            <button type="button" onClick={() => setPage("principle")}>编辑</button>
           </div>
           <p className="principle-copy">{settings.principle || "在设置中写下希望长期遵循的做事原则。"}</p>
         </section>

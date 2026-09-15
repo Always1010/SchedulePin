@@ -148,3 +148,13 @@
 - 解决方案：改用 `System.Diagnostics.Process.WaitForExit` 只等待 Setup 或 Uninstaller 自身，并为两者设置 120 秒超时；同时把整个 Windows Job 限制为 15 分钟，并在构建前输出 Rust、Cargo 和 Inno Setup 的实际版本与路径。
 - 验证方式：GitHub Actions API 显示失败运行中 `Build helper installer` 在约两分钟内成功，唯一超时步骤为 `Smoke test installer`；本地进程树回归检查确认新的单进程等待不会等待父进程启动的长驻子进程，PowerShell 和工作流静态检查通过。
 - 相关文件：`.github/workflows/release.yml`
+
+## SP-016：Principle 编辑按钮错误进入设置首页
+
+- 日期：2026-09-15
+- 状态：已解决
+- 现象或修改背景：点击主页 Principle 卡片上的“编辑”按钮后只会进入设置首页，用户还需要再次选择 Principle，未直接进入对应编辑器。
+- 原因分析：Principle 编辑按钮与顶部设置按钮复用了同一个页面状态，而设置页始终将首页作为默认分区，没有接收入口目标。
+- 解决方案：为设置页增加可指定的初始分区，并为主页 Principle 编辑按钮使用独立页面入口；顶部设置按钮仍进入设置首页。
+- 验证方式：TypeScript 类型检查与生产构建通过；Principle 编辑入口直接渲染原则编辑器，设置入口仍渲染设置首页。
+- 相关文件：`src/App.tsx`、`src/components/SettingsPage.tsx`
