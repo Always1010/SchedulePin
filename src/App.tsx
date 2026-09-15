@@ -10,7 +10,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Archive, BookOpenText, CalendarCheck, Check, Clock3, GripVertical,
-  ListTodo, Plus, Settings, Trash2,
+  ExternalLink, ListTodo, Plus, Settings, Trash2,
 } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
 import { AppearanceEditor } from "./components/AppearanceEditor";
@@ -179,6 +179,17 @@ export default function App() {
     await saveSettings(next);
   };
 
+  const openFullPage = async () => {
+    const fullPageUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL
+      ? chrome.runtime.getURL("index.html")
+      : new URL(location.pathname, location.origin).toString();
+    if (typeof chrome !== "undefined" && chrome.tabs?.create) {
+      await chrome.tabs.create({ url: fullPageUrl });
+      return;
+    }
+    window.open(fullPageUrl, "_blank", "noopener,noreferrer");
+  };
+
   const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} density-${settings.density}`;
 
   return (
@@ -189,10 +200,11 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark"><CalendarCheck size={19} /></span>
-          <span className="brand-copy"><strong>SchedulePin</strong><small className="desktop-status ready">{sidePanel ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></span>
+          <span className="brand-copy"><strong>SchedulePin</strong><small className="desktop-status ready">{sidePanel ? "浏览器侧边栏" : "To-Do · 完整页面"}</small></span>
         </div>
         <div className="topbar-actions">
           {settings.desktopEnabled && <span className="wallpaper-live">桌面同步已开启</span>}
+          {sidePanel && <button type="button" className="open-full-page-button" onClick={openFullPage} aria-label="在新标签页打开完整页面" title="在新标签页打开完整页面"><ExternalLink size={15} /><span>完整页面</span></button>}
           <button className="icon-button" onClick={() => setPage("settings")} aria-label="设置"><Settings size={18} /></button>
         </div>
       </header>
