@@ -3,6 +3,24 @@ const ITEMS_KEY = "schedulepin.items.v2";
 const SETTINGS_KEY = "schedulepin.settings.v2";
 let syncTimer;
 
+const DEFAULT_SETTINGS = {
+  principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。",
+  principleTheme: "forest",
+  principleFontFamily: "modern",
+  principleFontScale: 1,
+  principleTextStyle: "regular",
+  theme: "warm",
+  fontFamily: "modern",
+  fontScale: 1,
+  density: "comfortable",
+  cardRadius: 20,
+  opacity: 0.86,
+  displayMode: "single",
+  selectedMonitorId: null,
+  desktopEnabled: false,
+  layouts: {},
+};
+
 function nativeMessage(message) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendNativeMessage(HOST_NAME, message, (response) => {
@@ -24,23 +42,7 @@ async function snapshot() {
     date,
     generatedAt: now.toISOString(),
     items: (stored[ITEMS_KEY] || []).filter((item) => !item.archivedAt && item.kind !== "note"),
-    settings: stored[SETTINGS_KEY] || {
-      principle: "做完当前任务再开始下一项。临时想到的事情先记下来，不频繁切换。",
-      principleTheme: "forest",
-      principleFontFamily: "modern",
-      principleFontScale: 1,
-      principleTextStyle: "regular",
-      theme: "warm",
-      fontFamily: "modern",
-      fontScale: 1,
-      density: "comfortable",
-      cardRadius: 20,
-      opacity: 0.86,
-      displayMode: "single",
-      selectedMonitorId: null,
-      desktopEnabled: false,
-      layouts: {},
-    },
+    settings: { ...DEFAULT_SETTINGS, ...(stored[SETTINGS_KEY] || {}) },
   };
 }
 
@@ -73,7 +75,10 @@ async function syncNow() {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
   chrome.alarms.create("schedulepin-refresh", { periodInMinutes: 15 });
+  syncNow();
 });
+
+chrome.runtime.onStartup.addListener(() => syncNow());
 
 chrome.storage.onChanged.addListener((changes) => {
   if (!changes[ITEMS_KEY] && !changes[SETTINGS_KEY]) return;
@@ -91,6 +96,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
   if (message?.type === "sync-now") {
+    clearTimeout(syncTimer);
     syncNow().then(sendResponse);
     return true;
   }

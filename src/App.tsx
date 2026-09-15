@@ -20,7 +20,7 @@ import {
   archiveItem, createItem, defaultSettings, loadArchivedItems, loadItems, loadSettings,
   removeItem, restoreItem, saveSettings, saveTaskOrder, setCompleted, subscribeStorage, todayKey,
 } from "./data";
-import { queryHelper, restoreWallpaper } from "./native";
+import { queryHelper, restoreWallpaper, syncDesktop } from "./native";
 import type { AppSettings, HelperStatus, NewPlanItem, PlanItem } from "./types";
 
 const sidePanel = new URLSearchParams(location.search).get("view") === "sidepanel";
@@ -94,6 +94,10 @@ export default function App() {
     refresh();
     return subscribeStorage(refresh);
   }, [refresh]);
+
+  useEffect(() => {
+    if (!loading && settings.desktopEnabled) syncDesktop().then(setHelper);
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshHelper = useCallback(async () => {
     const next = await queryHelper();
@@ -171,6 +175,12 @@ export default function App() {
     await saveSettings(next);
   };
 
+  const saveAppearance = async (next: AppSettings) => {
+    await updateSettings(next);
+    if (next.desktopEnabled) setHelper(await syncDesktop());
+    setPage("settings");
+  };
+
   const restoreDesktop = async () => {
     const result = await restoreWallpaper();
     setHelper(result);
@@ -215,7 +225,7 @@ export default function App() {
         <AppearanceEditor
           settings={settings}
           items={items}
-          onSave={async (next) => { await updateSettings(next); setPage("settings"); }}
+          onSave={saveAppearance}
           onCancel={() => setPage("settings")}
         />
       ) : page === "settings" || page === "principle" ? (

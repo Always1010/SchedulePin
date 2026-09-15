@@ -168,3 +168,13 @@
 - 解决方案：在侧边栏顶部增加“完整页面”按钮，通过用户操作在新标签页打开 SchedulePin 完整页面，同时保留默认的新标签页接管。
 - 验证方式：生产构建后的 `manifest.json` 继续包含新标签页覆盖；侧边栏构建产物包含打开完整页面的按钮与 `chrome.tabs.create` 调用，TypeScript 类型检查和 Vite 构建通过。
 - 相关文件：`public/manifest.json`、`src/App.tsx`、`src/components/AppearanceEditor.tsx`、`src/styles.css`、`README.md`、`docs/ARCHITECTURE.md`、`docs/HELPER_INSTALL.md`
+
+## SP-018：保存外观后桌面壁纸没有应用新主题
+
+- 日期：2026-09-15
+- 状态：已解决
+- 现象或修改背景：在外观编辑器修改页面主题或 Principle 外观并保存后，浏览器页面会更新，但已启用的桌面壁纸可能保持原样。
+- 原因分析：壁纸渲染器使用固定的浅色计划卡片配色，没有读取全局 `theme`；外观保存完成后又只依赖 Service Worker 的存储监听延迟同步，调用方无法确认同步结果。旧存储数据缺少新 Principle 字段时，Service Worker 也没有主动补全默认值。
+- 解决方案：桌面渲染器根据全局主题选择计划卡片、标题、任务和控件配色，并继续独立应用 Principle 的背景、字体、字号和字重；外观保存后立即请求桌面同步并更新助手状态，显式同步会取消待执行的重复延迟任务；生成快照时合并完整默认设置以兼容旧数据，并在 SchedulePin 页面载入、扩展更新或浏览器启动时主动把当前完整设置重新同步给助手。
+- 验证方式：前端生产构建与桌面助手测试通过；新增渲染回归测试确认仅修改全局主题和 Principle 外观时，生成的 PNG 内容会发生变化。
+- 相关文件：`src/App.tsx`、`public/service-worker.js`、`native-helper/src/renderer.rs`
