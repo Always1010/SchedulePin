@@ -39,7 +39,10 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
     onChange(value);
   };
   const layout = draft.layouts[activeMonitor.id] ?? defaultDesktopLayout;
-  const goBack = () => section === "hub" ? onBack() : setSection("hub");
+  const goBack = () => {
+    if (section === "hub" || initialSection !== "hub") onBack();
+    else setSection("hub");
+  };
 
   return (
     <main className="settings-page page-shell">
