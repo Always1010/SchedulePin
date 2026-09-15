@@ -200,7 +200,7 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark"><CalendarCheck size={19} /></span>
-          <span className="brand-copy"><strong>SchedulePin</strong><small className="desktop-status ready">{sidePanel ? "浏览器侧边栏" : "To-Do · 完整页面"}</small></span>
+          <span className="brand-copy"><strong>SchedulePin</strong><small className="desktop-status ready">{sidePanel ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></span>
         </div>
         <div className="topbar-actions">
           {settings.desktopEnabled && <span className="wallpaper-live">桌面同步已开启</span>}

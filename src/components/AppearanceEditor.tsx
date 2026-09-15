@@ -28,7 +28,7 @@ const dateLabel = () => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "
 
 export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
   const [draft, setDraft] = useState(settings);
-  const [mode, setMode] = useState<"fullpage" | "sidepanel">("fullpage");
+  const [mode, setMode] = useState<"newtab" | "sidepanel">("newtab");
   const [saving, setSaving] = useState(false);
   const tasks = useMemo(() => items
     .filter((item) => item.kind === "task")
@@ -105,7 +105,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
           <div className="preview-toolbar">
             <strong>实时预览</strong>
             <div className="preview-mode-switch">
-              <button type="button" className={mode === "fullpage" ? "active" : ""} onClick={() => setMode("fullpage")}><Monitor size={14} />完整页面</button>
+              <button type="button" className={mode === "newtab" ? "active" : ""} onClick={() => setMode("newtab")}><Monitor size={14} />新标签页</button>
               <button type="button" className={mode === "sidepanel" ? "active" : ""} onClick={() => setMode("sidepanel")}><Sidebar size={14} />侧边栏</button>
             </div>
           </div>
@@ -115,7 +115,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
               className={`appearance-live-preview ${appearanceClass}${mode === "sidepanel" ? " compact-preview" : ""}`}
               style={{ "--font-scale": draft.fontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
             >
-              <div className="preview-appbar"><span className="preview-logo">✓</span><strong>SchedulePin</strong><small>{mode === "sidepanel" ? "浏览器侧边栏" : "To-Do · 完整页面"}</small></div>
+              <div className="preview-appbar"><span className="preview-logo">✓</span><strong>SchedulePin</strong><small>{mode === "sidepanel" ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></div>
               <div className="preview-page-content">
                 <section className="preview-day">
                   <div><span>今天</span><h2>{dateLabel()}</h2></div>

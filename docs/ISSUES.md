@@ -159,12 +159,12 @@
 - 验证方式：TypeScript 类型检查与生产构建通过；Principle 编辑入口直接渲染原则编辑器，设置入口仍渲染设置首页。
 - 相关文件：`src/App.tsx`、`src/components/SettingsPage.tsx`
 
-## SP-017：插件安装后强制接管浏览器新标签页
+## SP-017：侧边栏缺少打开完整页面的入口
 
 - 日期：2026-09-15
 - 状态：已解决
-- 现象或修改背景：插件通过清单固定替换浏览器新标签页，用户无法只使用侧边栏，也无法自行决定是否把完整计划作为浏览器起始页面；侧边栏同时缺少进入完整页面的入口。
-- 原因分析：`chrome_url_overrides` 是安装时声明的静态接管能力，不能通过插件内设置在运行时启停；原界面又假设完整页面只能由新标签页进入。
-- 解决方案：移除新标签页接管，把完整计划保留为独立扩展页面；在侧边栏顶部增加“完整页面”按钮，通过用户操作在新标签页打开该页面。用户如有需要，可自行在浏览器设置中把其地址设为启动页。
-- 验证方式：生产构建后的 `manifest.json` 不再包含 `chrome_url_overrides`；侧边栏构建产物包含打开完整页面的按钮与 `chrome.tabs.create` 调用，TypeScript 类型检查和 Vite 构建通过。
+- 现象或修改背景：用户在浏览网页时通过侧边栏管理任务，但需要查看更宽的完整计划时，只能手动新建标签页，侧边栏内没有直接入口。
+- 原因分析：顶部操作区只提供设置按钮，没有复用完整页面作为侧边栏的扩展导航目标。
+- 解决方案：在侧边栏顶部增加“完整页面”按钮，通过用户操作在新标签页打开 SchedulePin 完整页面，同时保留默认的新标签页接管。
+- 验证方式：生产构建后的 `manifest.json` 继续包含新标签页覆盖；侧边栏构建产物包含打开完整页面的按钮与 `chrome.tabs.create` 调用，TypeScript 类型检查和 Vite 构建通过。
 - 相关文件：`public/manifest.json`、`src/App.tsx`、`src/components/AppearanceEditor.tsx`、`src/styles.css`、`README.md`、`docs/ARCHITECTURE.md`、`docs/HELPER_INSTALL.md`
