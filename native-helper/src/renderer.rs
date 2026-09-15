@@ -58,6 +58,15 @@ fn is_completed(item: &PlanItem, date: &str) -> bool {
     item.completed && (!item.recurring_daily || item.completed_date.as_deref() == Some(date))
 }
 
+fn font_family(value: &str) -> &'static str {
+    match value {
+        "reading" => "Noto Serif SC, SimSun, serif",
+        "rounded" => "Microsoft YaHei UI, Noto Sans SC, sans-serif",
+        "system" => "Segoe UI, Microsoft YaHei UI, sans-serif",
+        _ => "Segoe UI, Noto Sans SC, Microsoft YaHei, sans-serif",
+    }
+}
+
 fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: f64) -> String {
     let tasks = visible_items(snapshot, "task");
     let font_scale = snapshot.settings.font_scale.clamp(0.85, 1.25);
@@ -79,19 +88,35 @@ fn plan_content(snapshot: &DesktopSnapshot, x: f64, y: f64, width: f64, height: 
     } else {
         snapshot.settings.principle.trim()
     };
-    let principle_lines = wrap_text(principle, max_chars.saturating_sub(2), 5);
-    let principle_height = body_size * (2.8 + principle_lines.len() as f64 * 1.25);
-    output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="#30463d"/>
-      <text x="{}" y="{}" font-size="{}" font-weight="700" fill="#f2b39b">PRINCIPLE</text>"##,
+    let principle_size = body_size * 0.78 * snapshot.settings.principle_font_scale.clamp(0.75, 1.6);
+    let principle_max_chars = ((width - padding * 2.6) / (principle_size * 0.62)).max(8.0) as usize;
+    let principle_lines = wrap_text(principle, principle_max_chars, 5);
+    let principle_height = principle_size * (3.2 + principle_lines.len() as f64 * 1.35);
+    let (principle_background, principle_accent, principle_foreground) = match snapshot.settings.principle_theme.as_str() {
+        "ink" => ("#303648", "#c1b7e8", "#f5f4fa"),
+        "paper" => ("#eee2cf", "#a45d49", "#49423b"),
+        "sunset" => ("#8d4e40", "#ffd0ae", "#fff8f4"),
+        _ => ("#30463d", "#f2b39b", "#f5f4ef"),
+    };
+    let principle_weight = match snapshot.settings.principle_text_style.as_str() {
+        "medium" => "500",
+        "bold" => "700",
+        _ => "400",
+    };
+    let principle_font_family = font_family(&snapshot.settings.principle_font_family);
+    output.push_str(&format!(r##"<rect x="{}" y="{}" width="{}" height="{}" rx="{}" fill="{}"/>
+      <g font-family="{}"><text x="{}" y="{}" font-size="{}" font-weight="700" fill="{}">PRINCIPLE</text>"##,
       x + padding * 0.72, cursor - body_size, width - padding * 1.44, principle_height,
-      body_size * 0.7, x + padding * 1.3, cursor, body_size * 0.78));
-    cursor += body_size * 1.55;
+      body_size * 0.7, principle_background, principle_font_family,
+      x + padding * 1.3, cursor, principle_size, principle_accent));
+    cursor += principle_size * 1.65;
     for line in principle_lines {
-        output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" fill="#f5f4ef">{}</text>"##,
-          x + padding * 1.3, cursor, body_size * 0.78, xml(&line)));
-        cursor += body_size * 1.25;
+        output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" font-weight="{}" fill="{}">{}</text>"##,
+          x + padding * 1.3, cursor, principle_size, principle_weight, principle_foreground, xml(&line)));
+        cursor += principle_size * 1.35;
     }
-    cursor += body_size * 1.4;
+    output.push_str("</g>");
+    cursor += principle_size * 1.4;
 
     output.push_str(&format!(r##"<text x="{}" y="{}" font-size="{}" font-weight="700" fill="#46534d">To-Do List</text>"##, x + padding, cursor, body_size));
     cursor += body_size * 1.75;
@@ -132,12 +157,7 @@ pub fn render_wallpaper(
     let background_svg = image_data(background).map(|data| format!(r##"<image href="{data}" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"/>"##)).unwrap_or_else(|| r##"<rect width="100%" height="100%" fill="url(#background)"/>"##.into());
     let opacity = snapshot.settings.opacity.clamp(0.35, 1.0);
     let radius = snapshot.settings.card_radius.clamp(8.0, 30.0);
-    let font_family = match snapshot.settings.font_family.as_str() {
-        "reading" => "Noto Serif SC, SimSun, serif",
-        "rounded" => "Microsoft YaHei UI, Noto Sans SC, sans-serif",
-        "system" => "Segoe UI, Microsoft YaHei UI, sans-serif",
-        _ => "Segoe UI, Noto Sans SC, Microsoft YaHei, sans-serif",
-    };
+    let font_family = font_family(&snapshot.settings.font_family);
     let content = plan_content(snapshot, x, y, width, height);
     let svg = format!(r##"<svg xmlns="http://www.w3.org/2000/svg" width="{screen_width}" height="{screen_height}" viewBox="0 0 {screen_width} {screen_height}">
       <defs>
@@ -170,6 +190,8 @@ mod tests {
             protocol_version: 1, date: "2026-09-14".into(), generated_at: "now".into(), items: vec![],
             settings: AppSettings {
                 principle: "完成当前任务再开始下一项。".into(), theme: "warm".into(), font_family: "modern".into(),
+                principle_theme: "forest".into(), principle_font_family: "modern".into(),
+                principle_font_scale: 1.0, principle_text_style: "regular".into(),
                 font_scale: 1.0, density: "comfortable".into(), card_radius: 20.0, opacity: 0.86,
                 display_mode: "single".into(), selected_monitor_id: None, desktop_enabled: true, layouts: HashMap::new(),
             },

@@ -190,12 +190,12 @@ export default function App() {
     window.open(fullPageUrl, "_blank", "noopener,noreferrer");
   };
 
-  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} density-${settings.density}`;
+  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} density-${settings.density} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
 
   return (
     <div
       className={`${sidePanel ? "app compact extension-app" : "app extension-app"} ${appearanceClass}`}
-      style={{ "--font-scale": settings.fontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
+      style={{ "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
     >
       <header className="topbar">
         <div className="brand">

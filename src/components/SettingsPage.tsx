@@ -55,7 +55,7 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
         <div className="settings-hub">
           <button type="button" className="settings-hub-card appearance-entry" onClick={onOpenAppearance}>
             <span className="hub-icon"><Palette size={21} /></span>
-            <div><h2>外观</h2><p>主题、字体、字号、界面密度和卡片圆角。</p><span className="appearance-summary"><i /><i /><i />{Math.round(draft.fontScale * 100)}% · {draft.cardRadius}px</span></div>
+            <div><h2>外观</h2><p>调整页面整体外观，并单独定制 Principle。</p><span className="appearance-summary"><i /><i /><i />{Math.round(draft.fontScale * 100)}% · {draft.cardRadius}px</span></div>
             <ChevronRight size={18} />
           </button>
           <button type="button" className="settings-hub-card" onClick={() => setSection("principle")}>

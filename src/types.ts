@@ -47,6 +47,10 @@ export interface DesktopLayout {
 
 export interface AppSettings {
   principle: string;
+  principleTheme: "forest" | "ink" | "paper" | "sunset";
+  principleFontFamily: "system" | "modern" | "reading" | "rounded";
+  principleFontScale: number;
+  principleTextStyle: "regular" | "medium" | "bold";
   theme: "warm" | "light" | "dark" | "system";
   fontFamily: "system" | "modern" | "reading" | "rounded";
   fontScale: number;

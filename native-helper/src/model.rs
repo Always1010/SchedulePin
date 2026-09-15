@@ -48,6 +48,14 @@ impl Default for DesktopLayout {
 pub struct AppSettings {
     #[serde(default)]
     pub principle: String,
+    #[serde(default = "default_principle_theme")]
+    pub principle_theme: String,
+    #[serde(default = "default_principle_font_family")]
+    pub principle_font_family: String,
+    #[serde(default = "default_font_scale")]
+    pub principle_font_scale: f64,
+    #[serde(default = "default_principle_text_style")]
+    pub principle_text_style: String,
     #[serde(default)]
     pub theme: String,
     #[serde(default)]
@@ -68,6 +76,9 @@ pub struct AppSettings {
 
 fn default_font_scale() -> f64 { 1.0 }
 fn default_card_radius() -> f64 { 20.0 }
+fn default_principle_theme() -> String { "forest".into() }
+fn default_principle_font_family() -> String { "modern".into() }
+fn default_principle_text_style() -> String { "regular".into() }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

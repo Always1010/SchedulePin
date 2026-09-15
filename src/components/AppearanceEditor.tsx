@@ -24,6 +24,13 @@ const fonts: Array<{ value: AppSettings["fontFamily"]; label: string; sample: st
   { value: "rounded", label: "圆润", sample: "Aa 计划" },
 ];
 
+const principleThemes: Array<{ value: AppSettings["principleTheme"]; label: string; color: string }> = [
+  { value: "forest", label: "森林", color: "linear-gradient(135deg,#2c4038,#4c6258)" },
+  { value: "ink", label: "夜墨", color: "linear-gradient(135deg,#242936,#41495d)" },
+  { value: "paper", label: "纸张", color: "linear-gradient(135deg,#fffaf1,#e8dac5)" },
+  { value: "sunset", label: "落日", color: "linear-gradient(135deg,#784038,#ad6751)" },
+];
+
 const dateLabel = () => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date());
 
 export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
@@ -36,7 +43,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
     .slice(0, 5), [items]);
   const completed = tasks.filter((item) => item.completed).length;
   const progress = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-  const appearanceClass = `theme-${draft.theme} font-${draft.fontFamily} density-${draft.density}`;
+  const appearanceClass = `theme-${draft.theme} font-${draft.fontFamily} density-${draft.density} principle-theme-${draft.principleTheme} principle-font-${draft.principleFontFamily} principle-style-${draft.principleTextStyle}`;
 
   const resetAppearance = () => setDraft((current) => ({
     ...current,
@@ -45,6 +52,10 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
     fontScale: defaultSettings.fontScale,
     density: defaultSettings.density,
     cardRadius: defaultSettings.cardRadius,
+    principleTheme: defaultSettings.principleTheme,
+    principleFontFamily: defaultSettings.principleFontFamily,
+    principleFontScale: defaultSettings.principleFontScale,
+    principleTextStyle: defaultSettings.principleTextStyle,
   }));
 
   const save = async () => {
@@ -66,38 +77,74 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
 
       <div className="appearance-workspace">
         <aside className="appearance-controls">
-          <label className="settings-control-label">主题</label>
-          <div className="theme-options">
-            {themes.map((theme) => (
-              <button type="button" key={theme.value} className={draft.theme === theme.value ? "selected" : ""} onClick={() => setDraft({ ...draft, theme: theme.value })}>
-                <i style={{ background: theme.color }} />{theme.label}{draft.theme === theme.value && <Check size={14} />}
-              </button>
-            ))}
-          </div>
+          <section className="appearance-control-section">
+            <div className="appearance-control-heading"><span>整体外观</span><small>页面与 To-Do</small></div>
+            <label className="settings-control-label">页面主题</label>
+            <div className="theme-options">
+              {themes.map((theme) => (
+                <button type="button" key={theme.value} className={draft.theme === theme.value ? "selected" : ""} onClick={() => setDraft({ ...draft, theme: theme.value })}>
+                  <i style={{ background: theme.color }} />{theme.label}{draft.theme === theme.value && <Check size={14} />}
+                </button>
+              ))}
+            </div>
 
-          <label className="settings-control-label"><Type size={14} />字体</label>
-          <div className="font-options">
-            {fonts.map((font) => (
-              <button type="button" key={font.value} data-font={font.value} className={draft.fontFamily === font.value ? "selected" : ""} onClick={() => setDraft({ ...draft, fontFamily: font.value })}>
-                <strong>{font.sample}</strong><small>{font.label}</small>
-              </button>
-            ))}
-          </div>
+            <label className="settings-control-label"><Type size={14} />全局字体</label>
+            <div className="font-options">
+              {fonts.map((font) => (
+                <button type="button" key={font.value} data-font={font.value} className={draft.fontFamily === font.value ? "selected" : ""} onClick={() => setDraft({ ...draft, fontFamily: font.value })}>
+                  <strong>{font.sample}</strong><small>{font.label}</small>
+                </button>
+              ))}
+            </div>
 
-          <div className="range-heading"><span>文字大小</span><strong>{Math.round(draft.fontScale * 100)}%</strong></div>
-          <input className="range" type="range" min="0.85" max="1.25" step="0.05" value={draft.fontScale} onChange={(event) => setDraft({ ...draft, fontScale: Number(event.target.value) })} />
+            <div className="range-heading"><span>全局文字大小</span><strong>{Math.round(draft.fontScale * 100)}%</strong></div>
+            <input className="range" type="range" min="0.85" max="1.25" step="0.05" value={draft.fontScale} onChange={(event) => setDraft({ ...draft, fontScale: Number(event.target.value) })} />
 
-          <label className="settings-control-label"><AlignJustify size={14} />界面密度</label>
-          <div className="density-options segmented">
-            {(["compact", "comfortable", "spacious"] as const).map((value) => (
-              <button type="button" key={value} className={draft.density === value ? "active" : ""} onClick={() => setDraft({ ...draft, density: value })}>
-                {{ compact: "紧凑", comfortable: "标准", spacious: "宽松" }[value]}
-              </button>
-            ))}
-          </div>
+            <label className="settings-control-label"><AlignJustify size={14} />界面密度</label>
+            <div className="density-options segmented">
+              {(["compact", "comfortable", "spacious"] as const).map((value) => (
+                <button type="button" key={value} className={draft.density === value ? "active" : ""} onClick={() => setDraft({ ...draft, density: value })}>
+                  {{ compact: "紧凑", comfortable: "标准", spacious: "宽松" }[value]}
+                </button>
+              ))}
+            </div>
 
-          <div className="range-heading"><span>卡片圆角</span><strong>{draft.cardRadius}px</strong></div>
-          <input className="range" type="range" min="8" max="30" step="1" value={draft.cardRadius} onChange={(event) => setDraft({ ...draft, cardRadius: Number(event.target.value) })} />
+            <div className="range-heading"><span>卡片圆角</span><strong>{draft.cardRadius}px</strong></div>
+            <input className="range" type="range" min="8" max="30" step="1" value={draft.cardRadius} onChange={(event) => setDraft({ ...draft, cardRadius: Number(event.target.value) })} />
+          </section>
+
+          <section className="appearance-control-section principle-appearance-controls">
+            <div className="appearance-control-heading"><span>Principle 外观</span><small>仅影响原则卡片</small></div>
+            <label className="settings-control-label">背景主题</label>
+            <div className="theme-options">
+              {principleThemes.map((theme) => (
+                <button type="button" key={theme.value} className={draft.principleTheme === theme.value ? "selected" : ""} onClick={() => setDraft({ ...draft, principleTheme: theme.value })}>
+                  <i style={{ background: theme.color }} />{theme.label}{draft.principleTheme === theme.value && <Check size={14} />}
+                </button>
+              ))}
+            </div>
+
+            <label className="settings-control-label"><Type size={14} />Principle 字体</label>
+            <div className="font-options">
+              {fonts.map((font) => (
+                <button type="button" key={font.value} data-font={font.value} className={draft.principleFontFamily === font.value ? "selected" : ""} onClick={() => setDraft({ ...draft, principleFontFamily: font.value })}>
+                  <strong>{font.sample}</strong><small>{font.label}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className="range-heading"><span>Principle 文字大小</span><strong>{Math.round(draft.principleFontScale * 100)}%</strong></div>
+            <input className="range" type="range" min="0.75" max="1.6" step="0.05" value={draft.principleFontScale} onChange={(event) => setDraft({ ...draft, principleFontScale: Number(event.target.value) })} />
+
+            <label className="settings-control-label">文字样式</label>
+            <div className="principle-style-options segmented">
+              {(["regular", "medium", "bold"] as const).map((value) => (
+                <button type="button" key={value} className={draft.principleTextStyle === value ? "active" : ""} onClick={() => setDraft({ ...draft, principleTextStyle: value })}>
+                  {{ regular: "常规", medium: "醒目", bold: "加粗" }[value]}
+                </button>
+              ))}
+            </div>
+          </section>
           <p className="appearance-draft-hint">这里的变化只影响预览。点击“保存”后才会应用到 SchedulePin。</p>
         </aside>
 
@@ -113,7 +160,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
           <div className={mode === "sidepanel" ? "preview-stage sidepanel-stage" : "preview-stage"}>
             <div
               className={`appearance-live-preview ${appearanceClass}${mode === "sidepanel" ? " compact-preview" : ""}`}
-              style={{ "--font-scale": draft.fontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
+              style={{ "--font-scale": draft.fontScale, "--principle-font-scale": draft.principleFontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
             >
               <div className="preview-appbar"><span className="preview-logo">✓</span><strong>SchedulePin</strong><small>{mode === "sidepanel" ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></div>
               <div className="preview-page-content">
