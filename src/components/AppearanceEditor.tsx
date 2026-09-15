@@ -2,6 +2,7 @@ import { AlignJustify, ArrowLeft, Check, Monitor, RotateCcw, Save, Sidebar, Type
 import { useMemo, useState } from "react";
 import { defaultSettings } from "../data";
 import type { AppSettings, PlanItem } from "../types";
+import { visualDesignStyle } from "../visualDesign";
 
 interface Props {
   settings: AppSettings;
@@ -160,7 +161,7 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
           <div className={mode === "sidepanel" ? "preview-stage sidepanel-stage" : "preview-stage"}>
             <div
               className={`appearance-live-preview ${appearanceClass}${mode === "sidepanel" ? " compact-preview" : ""}`}
-              style={{ "--font-scale": draft.fontScale, "--principle-font-scale": draft.principleFontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
+              style={{ ...visualDesignStyle(draft), "--font-scale": draft.fontScale, "--principle-font-scale": draft.principleFontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
             >
               <div className="preview-appbar"><span className="preview-logo">✓</span><strong>SchedulePin</strong><small>{mode === "sidepanel" ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></div>
               <div className="preview-page-content">

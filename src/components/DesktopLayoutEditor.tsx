@@ -1,10 +1,11 @@
 import { useRef } from "react";
-import type { DesktopLayout, MonitorInfo } from "../types";
+import type { AppSettings, DesktopLayout, MonitorInfo } from "../types";
+import { visualDesignStyle } from "../visualDesign";
 
 interface Props {
   monitor: MonitorInfo;
   layout: DesktopLayout;
-  opacity: number;
+  settings: AppSettings;
   onChange: (layout: DesktopLayout) => void;
 }
 
@@ -16,10 +17,11 @@ type Gesture = {
 } | null;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const desktopFontScale = (value: number) => value >= 1 ? 1 + (value - 1) * .55 : 1 - (1 - value) * .8;
 
 export const defaultDesktopLayout: DesktopLayout = { x: 0.68, y: 0.06, width: 0.28, height: 0.82 };
 
-export function DesktopLayoutEditor({ monitor, layout, opacity, onChange }: Props) {
+export function DesktopLayoutEditor({ monitor, layout, settings, onChange }: Props) {
   const surface = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture>(null);
 
@@ -65,17 +67,22 @@ export function DesktopLayoutEditor({ monitor, layout, opacity, onChange }: Prop
       >
         <div className="preview-wallpaper-glow" />
         <div
-          className="preview-plan-card"
+          className={`preview-plan-card theme-${settings.theme} font-${settings.fontFamily} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`}
           style={{
+            ...visualDesignStyle(settings),
             left: `${layout.x * 100}%`, top: `${layout.y * 100}%`,
             width: `${layout.width * 100}%`, height: `${layout.height * 100}%`,
-            opacity,
-          }}
+            opacity: settings.opacity,
+            "--font-scale": desktopFontScale(settings.fontScale),
+            "--principle-font-scale": desktopFontScale(settings.principleFontScale),
+            "--card-radius": `${settings.cardRadius}px`,
+          } as React.CSSProperties}
           onPointerDown={(event) => begin(event, "move")}
         >
-          <strong>SchedulePin</strong>
-          <span>今天 · 3 项计划</span>
-          <i /><i /><i />
+          <div className="preview-desktop-brand"><b>✓</b><strong>SchedulePin</strong></div>
+          <div className="preview-desktop-day"><span>今天</span><strong>9月15日</strong><i>33%</i></div>
+          <div className="preview-desktop-principle"><small>HOW I WORK</small><strong>Principle</strong><span>{settings.principle || "写下希望长期遵循的做事原则。"}</span></div>
+          <div className="preview-desktop-todos"><strong>To-Do List</strong><i /><i /><i /></div>
           <b className="preview-resize" onPointerDown={(event) => begin(event, "resize")} />
         </div>
       </div>

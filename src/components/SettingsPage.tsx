@@ -110,7 +110,7 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
             ))}
           </div>
           <div className="desktop-page-designer">
-            <DesktopLayoutEditor monitor={activeMonitor} layout={layout} opacity={draft.opacity} onChange={(next) => patch({ layouts: { ...draft.layouts, [activeMonitor.id]: next } })} />
+            <DesktopLayoutEditor monitor={activeMonitor} layout={layout} settings={draft} onChange={(next) => patch({ layouts: { ...draft.layouts, [activeMonitor.id]: next } })} />
             <div className="range-heading"><span>计划卡片不透明度</span><strong>{Math.round(draft.opacity * 100)}%</strong></div>
             <input className="range" type="range" min="0.35" max="1" step="0.01" value={draft.opacity} onChange={(event) => patch({ opacity: Number(event.target.value) })} />
           </div>

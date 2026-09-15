@@ -22,6 +22,7 @@ import {
 } from "./data";
 import { queryHelper, restoreWallpaper, syncDesktop } from "./native";
 import type { AppSettings, HelperStatus, NewPlanItem, PlanItem } from "./types";
+import { visualDesignStyle } from "./visualDesign";
 
 const sidePanel = new URLSearchParams(location.search).get("view") === "sidepanel";
 
@@ -205,7 +206,7 @@ export default function App() {
   return (
     <div
       className={`${sidePanel ? "app compact extension-app" : "app extension-app"} ${appearanceClass}`}
-      style={{ "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
+      style={{ ...visualDesignStyle(settings), "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
     >
       <header className="topbar">
         <div className="brand">
