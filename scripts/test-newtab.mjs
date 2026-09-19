@@ -29,6 +29,9 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 60000 });
   console.log("Loaded isolated app.");
   await page.getByRole("button", { name: "添加入口", exact: true }).waitFor();
+  await page.getByRole("textbox", { name: "查找网站入口", exact: true }).focus();
+  assert.equal(await page.locator(".shortcut-search input").evaluate(el => getComputedStyle(el).outlineStyle), "none");
+  assert.notEqual(await page.locator(".shortcut-search").evaluate(el => getComputedStyle(el).boxShadow), "none", "the whole search field retains a visible focus indicator");
   assert.equal(await page.locator(".shortcut-row").count(), 0, "fresh install has no invented links");
   await page.getByRole("button", { name: "添加入口", exact: true }).click();
   await page.getByLabel("名称", { exact: true }).fill("项目入口");

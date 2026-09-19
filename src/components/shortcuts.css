@@ -8,7 +8,7 @@
 .shortcut-search { display: flex; align-items: center; gap: 8px; margin: 18px 0 24px; padding: 10px; border: 1px solid var(--line); border-radius: min(11px, var(--card-radius)); color: var(--muted); background: var(--surface); transition: border-color .16s, box-shadow .16s; }
 .shortcut-search > svg { flex-shrink: 0; }
 .shortcut-search:focus-within { border-color: var(--navigation-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--navigation-accent) 12%, transparent); }
-.shortcut-search input { border: 0; background: transparent; width: 100%; min-width: 0; color: var(--ink); }
+.shortcut-search input { border: 0; outline: none; box-shadow: none; background: transparent; width: 100%; min-width: 0; color: var(--ink); }
 .app .shortcut-search input { font-size: calc(14px * var(--font-scale)); }
 .shortcut-section-label { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; padding: 0 6px; font-size: calc(12px * var(--font-scale)); color: var(--muted); font-weight: 500; }
 .shortcut-section-label > svg { color: var(--navigation-accent); }

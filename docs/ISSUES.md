@@ -208,3 +208,13 @@
 - 解决方案：只为非空且没有句号结尾的内容补充句号；空迁移结果回退到默认原则。已保存的自定义文字（包括空字符串和单独句号）保持不变。
 - 验证方式：`node scripts/test-settings.mjs` 三项测试通过，覆盖首次启动、旧原则迁移和既有原则与主题保留。
 - 相关文件：`src/data.ts`、`scripts/test-settings.mjs`、`package.json`
+
+## SP-022：入口搜索框聚焦时出现内部黑色边框
+
+- 日期：2026-09-19
+- 状态：已解决
+- 现象：点击入口搜索框时，文字区域出现独立的黑色矩形，与外部圆角描边叠加。
+- 原因：外层已有主题色 focus-within 样式，内部 input 仍保留浏览器默认 outline。
+- 解决方案：只移除该 input 的默认轮廓，由整个搜索框统一展示主题色边框和光晕，保留键盘焦点提示。
+- 验证方式：浏览器回归检查内部 outline 为 none，同时外层仍具有焦点阴影。
+- 相关文件：`src/components/shortcuts.css`、`scripts/test-newtab.mjs`
