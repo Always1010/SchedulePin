@@ -16,13 +16,19 @@ import {
 import { queryHelper, restoreWallpaper, syncDesktop } from "./native";
 import type { AppSettings, HelperStatus, NewPlanItem, PlanItem } from "./types";
 import { visualDesignStyle } from "./visualDesign";
+import { useBackground } from "./useBackground";
+import { BackgroundLayer, backgroundClass, backgroundSettings, backgroundStyle } from "./components/BackgroundLayer";
+import { BackgroundToolbar } from "./components/BackgroundToolbar";
+import { WallpaperPage } from "./components/WallpaperPage";
 const sidePanel = new URLSearchParams(location.search).get("view") === "sidepanel";
 const fullPlan = new URLSearchParams(location.search).get("view") === "plan";
 
 export default function App() {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [archived, setArchived] = useState<PlanItem[]>([]);
-  const [page, setPage] = useState<"main" | "archive" | "settings" | "principle" | "appearance">("main");
+  const [page, setPage] = useState<"main" | "archive" | "settings" | "principle" | "appearance" | "background">("main");
+  const newTabMain = page === "main" && !sidePanel && !fullPlan;
+  const background = useBackground(newTabMain);
   const [loading, setLoading] = useState(true);
 
   const [addOpen, setAddOpen] = useState(false);
@@ -144,19 +150,21 @@ export default function App() {
     window.open(fullPageUrl, "_blank", "noopener,noreferrer");
   };
 
-  const plan = <PlanView settings={settings} tasks={tasks} loading={loading} sidePanel={sidePanel}
+  const uiSettings = backgroundSettings(settings, newTabMain ? background.preferences : undefined);
+  const plan = <PlanView settings={uiSettings} tasks={tasks} loading={loading} sidePanel={sidePanel}
     principleExpanded={sidePanel || preferences.principleExpanded}
     onTogglePrinciple={sidePanel ? undefined : () => void updatePreferences({ principleExpanded: !preferences.principleExpanded })}
     onEditPrinciple={() => setPage("principle")} onOpenArchive={openArchive} onAddDetailed={() => setAddOpen(true)}
     onCreate={add} onToggle={toggle} onRename={rename} onDelete={remove} onArchive={archiveTask} onReorder={reorder} />;
 
-  const appearanceClass = `theme-${settings.theme} font-${settings.fontFamily} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
+  const appearanceClass = `theme-${uiSettings.theme} font-${settings.fontFamily} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
 
   return (
     <div
-      className={`${sidePanel ? "app compact extension-app" : "app extension-app"} ${appearanceClass}`}
-      style={{ ...visualDesignStyle(settings), "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
+      className={`${sidePanel ? "app compact extension-app" : "app extension-app"} ${appearanceClass} ${newTabMain ? backgroundClass(background.preferences) : ""}`}
+      style={{ ...visualDesignStyle(uiSettings), ...(newTabMain ? backgroundStyle(background.preferences,background.current) : {}), "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}
     >
+      {newTabMain && <BackgroundLayer preferences={background.preferences} current={background.current}/>}
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark"><CalendarCheck size={19} /></span>
@@ -170,7 +178,7 @@ export default function App() {
         </div>
       </header>
 
-      {page === "archive" ? (
+      {page === "background" ? <WallpaperPage preferences={background.preferences} wallpapers={background.wallpapers} settings={settings} tasks={tasks} navigation={navigation} navigationPreferences={preferences} onBack={()=>setPage("main")}/> : page === "archive" ? (
         <ArchivePage items={archived} onBack={() => setPage("main")} onRestore={restoreArchived} onDelete={remove} />
       ) : page === "appearance" ? (
         <AppearanceEditor
@@ -178,11 +186,13 @@ export default function App() {
           items={items}
           navigation={navigation}
           preferences={preferences}
+          background={background.preferences}
+          wallpaper={background.current}
           onSave={saveAppearance}
           onCancel={() => setPage("settings")}
         />
       ) : page === "settings" || page === "principle" ? (
-        <SettingsPage settings={settings} helper={helper} initialSection={page === "principle" ? "principle" : "hub"} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onOpenAppearance={() => setPage("appearance")} onBack={() => setPage("main")} />
+        <SettingsPage settings={settings} helper={helper} initialSection={page === "principle" ? "principle" : "hub"} onChange={updateSettings} onRefreshHelper={refreshHelper} onRestoreWallpaper={restoreDesktop} onOpenAppearance={() => setPage("appearance")} onOpenBackground={()=>setPage("background")} onBack={() => setPage("main")} />
       ) : sidePanel || fullPlan ? <main className="todo-main">{plan}</main> : navigationReady ? (
         <NewTabLayout data={navigation} preferences={preferences} onAction={changeNavigation} onPreferences={changeNewTabPreferences}>
           {preferences.tasksVisible ? plan : <div className="newtab-quiet">
@@ -194,6 +204,8 @@ export default function App() {
         </NewTabLayout>
       ) : <div className="newtab-loading">{navigationError || "正在打开新标签页…"}</div>}
       {(preferenceError || (navigationReady && navigationError)) && <div className="newtab-error" role="alert">{preferenceError || navigationError}</div>}
+      {newTabMain && background.ready && <BackgroundToolbar preferences={background.preferences} wallpapers={background.wallpapers} current={background.current} onOpen={()=>setPage("background")}/>}
+      {newTabMain && background.error && <div className="background-message" role="status">{background.error}<button type="button" onClick={()=>background.setError("")}>关闭</button></div>}
 
       <AddItemDialog open={addOpen} date={today} onClose={() => setAddOpen(false)} onSubmit={add} />
     </div>

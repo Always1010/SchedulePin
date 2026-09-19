@@ -1,0 +1,26 @@
+.wallpaper-page { flex: 1; width: 100%; min-height: 0; overflow: auto; padding: 24px clamp(16px,3vw,40px); color: var(--ink); }
+.wallpaper-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.wallpaper-page h1 { font-size: 25px; margin: 0; }.wallpaper-page h1+p { margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+.wallpaper-page button { cursor: pointer; border: 1px solid var(--line); color: var(--ink); background: var(--surface); border-radius: 9px; padding: 9px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.wallpaper-page button:hover { border-color: var(--design-accent); }.wallpaper-page button:disabled { cursor: default; opacity: .45; }
+.wallpaper-page button[aria-pressed=true],.wallpaper-page button[aria-selected=true] { color: var(--ink); background: color-mix(in srgb,var(--design-accent) 18%,var(--paper)); border-color: var(--design-accent); }
+.wallpaper-page .wallpaper-save { background: var(--ink); color: var(--paper); white-space: nowrap; }
+.wallpaper-workspace { display: grid; grid-template-columns: minmax(300px,400px) minmax(0,1fr); gap: 24px; align-items: start; max-width: 1550px; margin: auto; }
+.wallpaper-controls { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0; }
+.wallpaper-tabs { display: flex; gap: 4px; margin-bottom: 18px; }.wallpaper-tabs button { flex: 1; padding: 9px 5px; font-size: 13px; }
+.wallpaper-controls fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.wallpaper-controls label { display: grid; gap: 8px; margin: 18px 0; font-size: 13px; }
+.wallpaper-controls select { width: 100%; min-width: 0; padding: 9px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; }
+.wallpaper-controls input[type=range] { width: 100%; accent-color: var(--design-accent); }
+.wallpaper-controls .wallpaper-check { display: flex; align-items: center; }.wallpaper-check input { accent-color: var(--design-accent); }
+.wallpaper-style-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.wallpaper-page .wallpaper-style-swatch { display: flex; flex-direction: column; font-size: 12px; padding: 7px; }
+.wallpaper-style-swatch span { height: 52px; width: 100%; border-radius: 6px; }.wallpaper-style-swatch.paper span { background: repeating-linear-gradient(0deg,#f1e9da 0 3px,#e7dcc8 3px 4px); }.wallpaper-style-swatch.gradient span { background: linear-gradient(120deg,#b18dcc,#acdce1,#ebc9a7); }.wallpaper-style-swatch.photo span { background: linear-gradient(155deg,#aac5d5 40%,#7b9a84 41%,#365d5a 70%); }
+.wallpaper-presets,.wallpaper-library-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.wallpaper-library-actions button { font-size: 12px; padding: 8px; }.wallpaper-help { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.wallpaper-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 16px; }.wallpaper-grid article { min-width: 0; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; background: var(--paper); }.wallpaper-grid article.selected { border-color: var(--design-accent); }
+.wallpaper-page .wallpaper-thumbnail { padding: 0; border: 0; border-radius: 0; display: flex; flex-direction: column; width: 100%; align-items: stretch; background: transparent; text-align: left; }.wallpaper-thumbnail img { width: 100%; aspect-ratio: 1.5; object-fit: cover; background: var(--line); }.wallpaper-thumbnail span { font-size: 12px; padding: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wallpaper-grid article>small,.wallpaper-grid article>a { display: block; padding: 3px 8px 8px; overflow-wrap: anywhere; font-size: 11px; color: var(--muted); }
+.wallpaper-card-actions { display: flex; align-items: center; justify-content: space-between; padding: 3px; gap: 3px; }.wallpaper-card-actions small { font-size: 11px; color: var(--muted); }.wallpaper-card-actions button { border: 0; padding: 6px; }
+.wallpaper-preview { min-width: 0; position: sticky; top: 0; }.wallpaper-preview-modes { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }.wallpaper-attribution { padding: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; font-size: 12px; overflow-wrap: anywhere; }.wallpaper-attribution strong,.wallpaper-attribution span { width: 100%; }.wallpaper-attribution a { color: var(--ink); }.wallpaper-feedback { background: var(--surface); border-left: 3px solid var(--design-accent); padding: 12px; font-size: 13px; }
+@media(max-width:900px) { .wallpaper-workspace { grid-template-columns: 1fr; }.wallpaper-preview { position: static; }.wallpaper-page-heading { flex-wrap: wrap; }.wallpaper-page-heading h1 { font-size: 21px; } }

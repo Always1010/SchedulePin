@@ -58,6 +58,19 @@ try {
   await page.getByRole("button", { name: "设置", exact: true }).click();
   await page.locator(".appearance-entry").click();
   await page.frameLocator(".appearance-preview-frame").locator(".site-icon.has-image").waitFor();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await page.locator(".background-entry").click();
+  await page.getByRole("tab", { name: "我的壁纸", exact: true }).click();
+  await page.locator('input[accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: "离线壁纸.png", mimeType: "image/png", buffer: image });
+  await page.getByRole("button", { name: "预览 离线壁纸.png", exact: true }).waitFor();
+  await page.getByRole("tab", { name: "风格", exact: true }).click();
+  await page.getByLabel("换图方式", { exact: true }).selectOption("fixed");
+  await page.getByRole("button", { name: "保存背景", exact: true }).click();
+  await page.locator(".background-layer img").waitFor();
+  await context.setOffline(true); await page.reload();
+  await page.locator(".background-layer img").waitFor();
+  assert.ok(await page.locator(".background-layer img").evaluate(el => el.complete && el.naturalWidth > 0), "extension wallpaper survives offline reload");
+  console.log("PASS: wallpaper upload and offline extension reload with IndexedDB image.");
   console.log("PASS: unpacked extension, real browser favicon at nonstandard path, generic-globe fallback, and shared iframe preview. Native messaging disabled in isolated test copy.");
 } finally {
   await context?.close();

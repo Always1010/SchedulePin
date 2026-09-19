@@ -8,6 +8,8 @@
     "test:settings": "node --test scripts/test-settings.mjs",
     "test:ui": "node scripts/test-newtab.mjs",
     "test:icons": "node scripts/test-site-icons.mjs",
+    "test:background": "node scripts/test-background.mjs",
+    "test:wallpaper": "node scripts/test-wallpaper-ui.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

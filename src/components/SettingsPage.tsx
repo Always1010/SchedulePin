@@ -17,6 +17,7 @@ interface Props {
   onRefreshHelper: () => void;
   onRestoreWallpaper: () => void;
   onOpenAppearance: () => void;
+  onOpenBackground: () => void;
   onBack: () => void;
 }
 
@@ -28,7 +29,7 @@ const previewMonitor: MonitorInfo = {
 };
 const releasesUrl = "https://github.com/Always1010/SchedulePin/releases";
 
-export function SettingsPage({ settings, helper, initialSection = "hub", onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onBack }: Props) {
+export function SettingsPage({ settings, helper, initialSection = "hub", onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onOpenBackground, onBack }: Props) {
   const [section, setSection] = useState<SettingsSection>(initialSection);
   const [draft, setDraft] = useState(settings);
   const { navigation, preferences, navigationReady, navigationError } = useNavigation();
@@ -72,6 +73,7 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
             <div><h2>外观</h2><p>调整页面整体外观，并单独定制 Principle。</p><span className="appearance-summary"><i /><i /><i />{Math.round(draft.fontScale * 100)}% 字号 · {Math.round(draft.densityLevel)}% 间距 · {draft.cardRadius}px 圆角</span></div>
             <ChevronRight size={18} />
           </button>
+          <button type="button" className="settings-hub-card background-entry" onClick={onOpenBackground}><span className="hub-icon"><Palette size={21}/></span><div><h2>背景与壁纸</h2><p>纸感、流彩、风景；上传、收藏与自动换图。</p><span className="hub-preview-text">新标签页独立外观</span></div><ChevronRight size={18}/></button>
           <button type="button" className="settings-hub-card" onClick={() => setSection("principle")}>
             <span className="hub-icon"><Type size={21} /></span>
             <div><h2>Principle</h2><p>编辑计划区域中的原则段落。</p><span className="hub-preview-text">{draft.principle || "尚未填写 Principle"}</span></div>

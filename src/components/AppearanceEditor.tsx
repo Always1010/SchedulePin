@@ -4,6 +4,7 @@ import { defaultSettings } from "../data";
 import type { AppSettings, PlanItem } from "../types";
 import { AppearancePreview, type PreviewMode } from "./AppearancePreview";
 import type { NavigationData, NewTabPreferences } from "../navigation";
+import type { BackgroundPreferences, Wallpaper } from "../backgroundModel";
 import "./appearance-preview.css";
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   items: PlanItem[];
   navigation: NavigationData;
   preferences: NewTabPreferences;
+  background?: BackgroundPreferences;
+  wallpaper?: Wallpaper;
   onSave: (settings: AppSettings) => Promise<void>;
   onCancel: () => void;
 }
@@ -37,7 +40,7 @@ const principleThemes: Array<{ value: AppSettings["principleTheme"]; label: stri
 ];
 
 
-export function AppearanceEditor({ settings, items, navigation, preferences, onSave, onCancel }: Props) {
+export function AppearanceEditor({ settings, items, navigation, preferences, background, wallpaper, onSave, onCancel }: Props) {
   const [draft, setDraft] = useState(settings);
   const [mode, setMode] = useState<PreviewMode>("newtab");
   const [saving, setSaving] = useState(false);
@@ -162,7 +165,7 @@ export function AppearanceEditor({ settings, items, navigation, preferences, onS
             </div>
           </div>
 
-          <AppearancePreview settings={draft} tasks={tasks} navigation={navigation} preferences={preferences} mode={mode} />
+          <AppearancePreview settings={draft} tasks={tasks} navigation={navigation} preferences={preferences} mode={mode} background={background} wallpaper={wallpaper} />
         </section>
       </div>
     </main>
