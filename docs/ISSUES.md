@@ -256,5 +256,5 @@
 - 现象或修改背景：使用“每次打开或刷新时更换”时，如果在线图片仍在下载，另一个窗口随后固定壁纸或恢复背景默认值，先前的下载完成后仍会把旧候选图设为当前窗口壁纸；工具栏手动“换一张”和打开页面时自动换图都有此问题。
 - 原因分析：换图开始时只捕获了偏好版本，下载完成后的版本检查与缓存写入分成两个步骤；工具栏手动换图甚至没有检查版本。固定或重置可能在检查前后更新设置，使过期请求仍写入缓存并更新窗口状态。
 - 解决方案：新增带预期版本的窗口壁纸缓存事务，在同一个 IndexedDB 读写事务内确认偏好版本和 `open` 模式后再写入缓存；自动与手动换图都只在事务成功后更新窗口状态，版本过期时静默丢弃候选图。
-- 验证方式：TypeScript 检查、背景模型测试和真实 Edge IndexedDB 回归通过；存储回归模拟换图捕获旧版本后另一个窗口固定壁纸，确认过期候选图不会写入缓存。
-- 相关文件：`src/backgroundStore.ts`、`src/useBackground.ts`、`src/components/BackgroundToolbar.tsx`、`scripts/test-wallpaper-store.mjs`
+- 验证方式：TypeScript 检查、背景模型测试和真实 Edge IndexedDB 回归通过；存储回归模拟换图捕获旧版本后另一个窗口固定壁纸，确认过期候选图不会写入缓存。React 双窗口回归延迟真实图片响应，分别在另一窗口固定与恢复默认，等待下载后的存储事务完成后确认旧图片未应用或缓存；同时验证初始化不会清掉用于排除上一张图片的窗口记录。
+- 相关文件：`src/backgroundStore.ts`、`src/useBackground.ts`、`src/components/BackgroundToolbar.tsx`、`scripts/test-wallpaper-store.mjs`、`scripts/test-wallpaper-race.mjs`、`scripts/wallpaper-race-harness.tsx`
