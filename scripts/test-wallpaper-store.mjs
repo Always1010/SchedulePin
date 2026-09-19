@@ -7,6 +7,7 @@ const playwrightPath=process.env.SCHEDULEPIN_PLAYWRIGHT_PATH??"C:/Users/always$$
 const {chromium}=await import(pathToFileURL(playwrightPath).href);
 const server=await createServer({
   server:{host:"127.0.0.1",port:0},logLevel:"error",
+  optimizeDeps:{noDiscovery:true},
   plugins:[{name:"wallpaper-store-test-page",configureServer(dev){dev.middlewares.use("/__wallpaper_store_test__",(_request,response)=>{response.setHeader("Content-Type","text/html");response.end("<!doctype html><title>store test</title>");});}}],
 });
 await server.listen();
@@ -28,6 +29,12 @@ const result=await page.evaluate(async()=>{
   const resumeOk=await store.resumeWallpaperRotation(afterPin.preferences.revision);
   const afterResume=await store.readBackground();
 
+  const staleRevision=afterResume.preferences.revision;
+  await store.pinWallpaper(pinned,staleRevision);
+  const staleCacheAccepted=await store.cacheWallpaperForWindow(wallpaper("stale-after-pin"),staleRevision);
+  const afterStalePin=await store.readBackground();
+  await store.resumeWallpaperRotation(afterStalePin.preferences.revision);
+
   const recovered=wallpaper("recovered");
   await store.favoriteWallpaper(recovered,true);
   const afterFavorite=await store.readBackground();
@@ -47,8 +54,17 @@ const result=await page.evaluate(async()=>{
 
   const resetOk=await store.resetBackground(migratedLegacy.preferences.revision);
   const afterReset=await store.readBackground();
+  await store.saveBackground({style:"photo",mode:"open"});
+  const beforeConcurrentReset=await store.readBackground();
+  await store.resetBackground(beforeConcurrentReset.preferences.revision);
+  const staleAfterResetAccepted=await store.cacheWallpaperForWindow(wallpaper("stale-after-reset"),beforeConcurrentReset.preferences.revision);
+  const afterConcurrentReset=await store.readBackground();
   return {
     pinOk,resumeOk,resetOk,
+    staleCacheAccepted,
+    staleCached:Boolean(afterStalePin.wallpapers.find(item=>item.id==="stale-after-pin")),
+    staleAfterResetAccepted,
+    staleAfterResetCached:Boolean(afterConcurrentReset.wallpapers.find(item=>item.id==="stale-after-reset")),
     pinned:afterPin.wallpapers.find(item=>item.id==="pin"),
     pinMode:afterPin.preferences.mode,
     resumedMode:afterResume.preferences.mode,
@@ -57,14 +73,16 @@ const result=await page.evaluate(async()=>{
     retained:Boolean(afterTrim.wallpapers.find(item=>item.id==="retained")),
     libraryChanges,
     migratedLegacy:migratedLegacy.wallpapers.find(item=>item.id==="legacy-fixed"),
-    reset:afterReset.preferences,
-    libraryIds:afterReset.wallpapers.map(item=>item.id),
+    reset:afterConcurrentReset.preferences,
+    libraryIds:afterConcurrentReset.wallpapers.map(item=>item.id),
   };
 });
 
 test("固定、解除固定、收藏恢复和缓存清理写入 IndexedDB",()=>{
   assert.equal(result.pinOk,true);assert.equal(result.pinMode,"fixed");assert.equal(result.pinned.retained,true);
   assert.equal(result.resumeOk,true);assert.equal(result.resumedMode,"open");
+  assert.equal(result.staleCacheAccepted,false);assert.equal(result.staleCached,false);
+  assert.equal(result.staleAfterResetAccepted,false);assert.equal(result.staleAfterResetCached,false);
   assert.equal(result.recovered.favorite,true);
   assert.equal(result.cacheCount,6);assert.equal(result.retained,true);
   assert.equal(result.libraryChanges,1);assert.equal(result.migratedLegacy.retained,true);

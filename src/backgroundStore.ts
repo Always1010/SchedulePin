@@ -64,6 +64,16 @@ export async function cacheWallpapers(additions: Wallpaper[]) {
     await done; changed("cache");
   });
 }
+/** Cache one window-local choice only while the open-mode request that produced it is still current. */
+export async function cacheWallpaperForWindow(item: Wallpaper, expectedRevision: number) {
+  return lockBackground(async () => {
+    const tx = (await db()).transaction(["preferences", "wallpapers"], "readwrite"); const done = complete(tx);
+    const preferences = cleanBackground(await result(tx.objectStore("preferences").get("current")) ?? {});
+    if (preferences.revision !== expectedRevision || preferences.mode !== "open") { await done; return false; }
+    const store = tx.objectStore("wallpapers"); const previous = await result(store.get(item.id)) as Wallpaper | undefined;
+    store.put(mergeWallpaper(item, previous)); await done; changed("cache"); return true;
+  });
+}
 export async function retainWallpapers(additions: Wallpaper[]) {
   if (!additions.length) return;
   return lockBackground(async () => {

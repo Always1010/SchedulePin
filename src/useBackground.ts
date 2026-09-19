@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { backgroundDay, defaultBackground, isSavedWallpaper, shouldRotate, type Wallpaper } from "./backgroundModel";
-import { cacheWallpapers, readBackground, saveBackground, subscribeBackground, trimBackgroundCache } from "./backgroundStore";
+import { cacheWallpaperForWindow, readBackground, saveBackground, subscribeBackground, trimBackgroundCache } from "./backgroundStore";
 import { discoverWallpapers, downloadWallpaper } from "./backgroundSource";
 
 const SESSION_WALLPAPER_KEY = "schedulepin.background.window-current.v1";
@@ -13,7 +13,7 @@ export function useBlobUrl(blob?: Blob) {
 export async function nextWallpaper(preferences: typeof defaultBackground, wallpapers: Wallpaper[]) {
   const available = wallpapers.filter(w => isSavedWallpaper(w) && w.id !== preferences.currentId);
   if (preferences.pool === "favorites") {
-    if (!available.length) throw new Error("收藏中没有其他壁纸，请先添加图片。");
+    if (!available.length) throw new Error("我的壁纸中没有其他图片，请先收藏、固定或上传图片。");
     return available[Math.floor(Math.random() * available.length)];
   }
   const candidates = (await discoverWallpapers(preferences.category, Math.floor(Math.random() * 4) * 12)).filter(w => w.id !== preferences.currentId);
@@ -41,11 +41,12 @@ export function useBackground(enabled: boolean) {
     const refresh = async () => { const request = ++version; try { const next = await readBackground(); if (active && request === version) { setState(next); setReady(true); } } catch { if (active) setError("无法读取本地壁纸库，请重试。"); } };
     void refresh(); const stop = subscribeBackground(change => { if (change !== "cache") void refresh(); }); return () => { active = false; stop(); };
   }, []);
-  useEffect(() => { if (state.preferences.mode !== "open") selectForWindow(undefined); }, [state.preferences.mode]);
+  useEffect(() => { if (ready && state.preferences.mode !== "open") selectForWindow(undefined); }, [ready,state.preferences.mode]);
   useEffect(() => {
+    if (!ready) return;
     if (persistedCurrent.current !== undefined && persistedCurrent.current !== state.preferences.currentId && state.preferences.mode === "open") selectForWindow(undefined);
     persistedCurrent.current = state.preferences.currentId;
-  }, [state.preferences.currentId, state.preferences.mode]);
+  }, [ready,state.preferences.currentId, state.preferences.mode]);
   useEffect(() => {
     if (!ready || !enabled || attempted.current) return;
     attempted.current = true;
@@ -58,9 +59,8 @@ export function useBackground(enabled: boolean) {
         const next = await nextWallpaper({ ...state.preferences, currentId: previousId }, state.wallpapers);
         while (active && (document.visibilityState !== "visible" || document.activeElement?.matches('input,textarea,select,[contenteditable="true"]') || document.querySelector('dialog[open], [role="dialog"]'))) await new Promise(resolve => setTimeout(resolve, 500));
         if (active && state.preferences.mode === "open") {
-          const latest = await readBackground();
-          if (latest.preferences.revision !== state.preferences.revision || latest.preferences.mode !== "open") return;
-          await cacheWallpapers([next]); selectForWindow(next); await trimBackgroundCache();
+          if (!await cacheWallpaperForWindow(next,state.preferences.revision)) return;
+          selectForWindow(next); await trimBackgroundCache();
         } else if (active) {
           await saveBackground({ currentId: next.id, lastDay: backgroundDay() }, [next], state.preferences.revision); await trimBackgroundCache();
         }

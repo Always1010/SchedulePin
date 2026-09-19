@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Heart, Image, Lock, Shuffle, X } from "lucide-react";
 import { backgroundDay, type BackgroundPreferences, type Wallpaper } from "../backgroundModel";
-import { cacheWallpapers, favoriteWallpaper, pinWallpaper, resumeWallpaperRotation, saveBackground, trimBackgroundCache } from "../backgroundStore";
+import { cacheWallpaperForWindow, favoriteWallpaper, pinWallpaper, resumeWallpaperRotation, saveBackground, trimBackgroundCache } from "../backgroundStore";
 import { nextWallpaper, useBlobUrl } from "../useBackground";
 
 function Candidate({ item, busy, onApply, onClose }: { item: Wallpaper; busy: boolean; onApply: ()=>void; onClose:()=>void }) {
@@ -18,7 +18,7 @@ export function BackgroundToolbar({ preferences, wallpapers, current, onOpen, on
     {error&&<div className="background-message" role="alert">{error}<button onClick={()=>setError("")} aria-label="关闭壁纸提示"><X size={14}/></button></div>}
     <div className="background-toolbar" aria-label="壁纸操作">
       {current?.sourceUrl&&<a href={current.sourceUrl} target="_blank" rel="noreferrer" title={`${current.author} · ${current.license}`}>{current.author || "图片来源"} · {current.license}</a>}
-      <button type="button" disabled={busy} onClick={()=>void run(async()=>{const item=await nextWallpaper({...preferences,currentId:current?.id??preferences.currentId},wallpapers);if(preferences.mode==="fixed")setCandidate(item);else if(preferences.mode==="open"){await cacheWallpapers([item]);onWindowCurrent(item);await trimBackgroundCache();}else{committed(await saveBackground({style:"photo",currentId:item.id,lastDay:backgroundDay()},[item],preferences.revision));await trimBackgroundCache();}})}><Shuffle size={14}/>{busy?"加载中…":"换一张"}</button>
+      <button type="button" disabled={busy} onClick={()=>void run(async()=>{const item=await nextWallpaper({...preferences,currentId:current?.id??preferences.currentId},wallpapers);if(preferences.mode==="fixed")setCandidate(item);else if(preferences.mode==="open"){if(!await cacheWallpaperForWindow(item,preferences.revision))return;onWindowCurrent(item);await trimBackgroundCache();}else{committed(await saveBackground({style:"photo",currentId:item.id,lastDay:backgroundDay()},[item],preferences.revision));await trimBackgroundCache();}})}><Shuffle size={14}/>{busy?"加载中…":"换一张"}</button>
       <button type="button" disabled={busy||!current} aria-pressed={current?.favorite??false} onClick={()=>current&&void run(()=>favoriteWallpaper(current,!current.favorite))}><Heart size={14}/>{current?.favorite?"已收藏":"收藏"}</button>
       <button type="button" disabled={busy||!current} aria-pressed={preferences.mode==="fixed"} onClick={()=>void run(toggleFixed)}><Lock size={14}/>{preferences.mode==="fixed"?"已固定":"固定"}</button>
       <button type="button" onClick={onOpen}><Image size={14}/>壁纸库</button>
