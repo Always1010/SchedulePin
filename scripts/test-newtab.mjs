@@ -124,7 +124,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: fileURLToPath(new URL("landscape.png", output)), fullPage: true });
   await page.setViewportSize({ width: 1080, height: 1500 });
-  await page.getByText("固定的网站显示在“已固定”中；只有未固定的网站会按分类显示。", { exact: true }).waitFor();
+  await page.getByText("按下“/”快速聚焦到查找入口；分组只展示未固定网站。", { exact: true }).waitFor();
   await page.getByRole("button", { name: "整理", exact: true }).click();
   const manageLayout = await page.locator('[data-link-id="link-0"]').evaluate(row => {
     const link = row.querySelector("a")?.getBoundingClientRect();
