@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { backgroundDay, defaultBackground, shouldRotate, type Wallpaper } from "./backgroundModel";
+import { backgroundDay, defaultBackground, isSavedWallpaper, shouldRotate, type Wallpaper } from "./backgroundModel";
 import { cacheWallpapers, readBackground, saveBackground, subscribeBackground, trimBackgroundCache } from "./backgroundStore";
 import { discoverWallpapers, downloadWallpaper } from "./backgroundSource";
 
@@ -11,7 +11,7 @@ export function useBlobUrl(blob?: Blob) {
   return value?.blob === blob ? value?.url : undefined;
 }
 export async function nextWallpaper(preferences: typeof defaultBackground, wallpapers: Wallpaper[]) {
-  const available = wallpapers.filter(w => w.favorite && w.id !== preferences.currentId);
+  const available = wallpapers.filter(w => isSavedWallpaper(w) && w.id !== preferences.currentId);
   if (preferences.pool === "favorites") {
     if (!available.length) throw new Error("收藏中没有其他壁纸，请先添加图片。");
     return available[Math.floor(Math.random() * available.length)];
@@ -26,11 +26,14 @@ export function useBackground(enabled: boolean) {
   const [windowCurrent, setWindowCurrent] = useState<Wallpaper>();
   const [ready, setReady] = useState(false); const [error, setError] = useState("");
   const attempted = useRef(false);
+  const persistedCurrent = useRef<string|null|undefined>(undefined);
   const selectForWindow = (item?: Wallpaper) => {
     setWindowCurrent(item);
     if (item) {
       setState(previous => ({ ...previous, wallpapers: previous.wallpapers.some(wallpaper => wallpaper.id === item.id) ? previous.wallpapers : [...previous.wallpapers, item] }));
       try { sessionStorage.setItem(SESSION_WALLPAPER_KEY, item.id); } catch { /* Session storage may be unavailable in restricted contexts. */ }
+    } else {
+      try { sessionStorage.removeItem(SESSION_WALLPAPER_KEY); } catch { /* Session storage may be unavailable in restricted contexts. */ }
     }
   };
   useEffect(() => {
@@ -38,7 +41,11 @@ export function useBackground(enabled: boolean) {
     const refresh = async () => { const request = ++version; try { const next = await readBackground(); if (active && request === version) { setState(next); setReady(true); } } catch { if (active) setError("无法读取本地壁纸库，请重试。"); } };
     void refresh(); const stop = subscribeBackground(change => { if (change !== "cache") void refresh(); }); return () => { active = false; stop(); };
   }, []);
-  useEffect(() => { if (state.preferences.mode !== "open") setWindowCurrent(undefined); }, [state.preferences.mode]);
+  useEffect(() => { if (state.preferences.mode !== "open") selectForWindow(undefined); }, [state.preferences.mode]);
+  useEffect(() => {
+    if (persistedCurrent.current !== undefined && persistedCurrent.current !== state.preferences.currentId && state.preferences.mode === "open") selectForWindow(undefined);
+    persistedCurrent.current = state.preferences.currentId;
+  }, [state.preferences.currentId, state.preferences.mode]);
   useEffect(() => {
     if (!ready || !enabled || attempted.current) return;
     attempted.current = true;
@@ -51,6 +58,8 @@ export function useBackground(enabled: boolean) {
         const next = await nextWallpaper({ ...state.preferences, currentId: previousId }, state.wallpapers);
         while (active && (document.visibilityState !== "visible" || document.activeElement?.matches('input,textarea,select,[contenteditable="true"]') || document.querySelector('dialog[open], [role="dialog"]'))) await new Promise(resolve => setTimeout(resolve, 500));
         if (active && state.preferences.mode === "open") {
+          const latest = await readBackground();
+          if (latest.preferences.revision !== state.preferences.revision || latest.preferences.mode !== "open") return;
           await cacheWallpapers([next]); selectForWindow(next); await trimBackgroundCache();
         } else if (active) {
           await saveBackground({ currentId: next.id, lastDay: backgroundDay() }, [next], state.preferences.revision); await trimBackgroundCache();
