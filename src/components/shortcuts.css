@@ -14,8 +14,9 @@
 .shortcut-section-label > svg { color: var(--navigation-accent); }
 .shortcut-section-label small { margin-left: auto; }
 .shortcut-section-label small, .shortcut-group-heading small { padding: 1px 6px; border-radius: 6px; background: var(--navigation-soft); font-size: calc(11px * var(--font-scale)); font-variant-numeric: tabular-nums; }
-.shortcut-row { margin: 3px -5px; border-radius: min(11px, var(--card-radius)); transition: background .16s; }
+.shortcut-row { margin: 3px -5px; border-radius: min(11px, var(--card-radius)); transition: background .16s, box-shadow .16s; }
 .shortcut-row { position: relative; }
+.shortcut-row.shortcut-active { background: var(--navigation-soft); box-shadow: inset 3px 0 var(--navigation-accent); }
 .shortcut-row:has(.shortcut-drag-handle) { display: flex; align-items: center; }
 .shortcut-row:has(.shortcut-drag-handle) a { padding-right: 6px; flex: 1; }
 .shortcut-row:has(.shortcut-drag-handle) a > svg { display: none; }

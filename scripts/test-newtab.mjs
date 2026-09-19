@@ -29,7 +29,7 @@ try {
   await page.goto(base, { waitUntil: "domcontentloaded", timeout: 60000 });
   console.log("Loaded isolated app.");
   await page.getByRole("button", { name: "添加入口", exact: true }).waitFor();
-  await page.getByRole("textbox", { name: "查找网站入口", exact: true }).focus();
+  await page.getByRole("combobox", { name: "查找网站入口", exact: true }).focus();
   assert.equal(await page.locator(".shortcut-search input").evaluate(el => getComputedStyle(el).outlineStyle), "none");
   assert.notEqual(await page.locator(".shortcut-search").evaluate(el => getComputedStyle(el).boxShadow), "none", "the whole search field retains a visible focus indicator");
   assert.equal(await page.locator(".shortcut-row").count(), 0, "fresh install has no invented links");
@@ -77,6 +77,20 @@ try {
   await page.keyboard.press("/");
   assert.equal(await page.locator(".shortcut-search input").evaluate(el => el === document.activeElement), true);
   assert.equal(await page.locator(".shortcut-search input").inputValue(), "");
+  const shortcutSearch = page.getByRole("combobox", { name: "查找网站入口", exact: true });
+  await shortcutSearch.fill("网站入口");
+  assert.equal(await page.locator(".shortcut-active").getAttribute("data-link-id"), "link-0", "the first search result is selected by default");
+  assert.equal(await shortcutSearch.getAttribute("aria-activedescendant"), "shortcut-result-0");
+  await shortcutSearch.press("ArrowDown");
+  assert.equal(await page.locator(".shortcut-active").getAttribute("data-link-id"), "link-1", "ArrowDown selects the next result");
+  await shortcutSearch.press("ArrowUp");
+  assert.equal(await page.locator(".shortcut-active").getAttribute("data-link-id"), "link-0", "ArrowUp selects the previous result");
+  await page.locator(".shortcut-active a").evaluate(link => link.addEventListener("click", event => { event.preventDefault(); document.body.dataset.keyboardShortcut = link.getAttribute("href"); }, { once: true }));
+  await shortcutSearch.press("Enter");
+  assert.equal(await page.locator("body").getAttribute("data-keyboard-shortcut"), "https://example.com/0", "Enter opens the selected result");
+  await shortcutSearch.fill("网站入口 3");
+  assert.equal(await page.locator(".shortcut-active").getAttribute("data-link-id"), "link-2", "changing the query resets selection to the first match");
+  await page.getByRole("button", { name: "清除查找", exact: true }).click();
   const quick = page.getByRole("textbox", { name: "快速添加 To-Do", exact: true });
   await quick.fill("测试"); await quick.press("/");
   assert.equal(await quick.inputValue(), "测试/"); await quick.fill("");
@@ -175,7 +189,7 @@ try {
   await page.getByRole("button", { name: "下移 网站入口 2", exact: true }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.navigation.v1")).links[1].id === "link-2");
   await page.getByRole("button", { name: "完成", exact: true }).click();
-  await page.getByRole("textbox", { name: "查找网站入口", exact: true }).fill("办公");
+  await page.getByRole("combobox", { name: "查找网站入口", exact: true }).fill("办公");
   assert.equal(await page.locator(".shortcut-row").count(), 1);
   await page.getByRole("button", { name: "清除查找", exact: true }).click();
   const other = await context.newPage(); await other.goto(base); await other.locator(".shortcut-row").first().waitFor();

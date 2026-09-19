@@ -11,9 +11,9 @@ export function ShortcutSortArea({ ids, disabled, onMove, children }: { ids: str
   }}><SortableContext items={ids} strategy={verticalListSortingStrategy}>{children}</SortableContext></DndContext>;
 }
 
-export function SortableShortcut({ id, title, disabled, editable, children }: { id: string; title: string; disabled: boolean; editable: boolean; children: ReactNode }) {
+export function SortableShortcut({ id, title, disabled, editable, selected = false, children }: { id: string; title: string; disabled: boolean; editable: boolean; selected?: boolean; children: ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
-  return <div ref={setNodeRef} className={`shortcut-row${isDragging ? " shortcut-dragging" : ""}`} data-link-id={id}
+  return <div ref={setNodeRef} className={`shortcut-row${isDragging ? " shortcut-dragging" : ""}${selected ? " shortcut-active" : ""}`} data-link-id={id}
     style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 2 : undefined }}>
     {editable && <button className="shortcut-drag-handle" type="button" disabled={disabled} {...attributes} {...listeners} aria-label={`拖动 ${title} 调整入口顺序`}><GripVertical size={15} /></button>}
     {children}
