@@ -1,5 +1,6 @@
 export interface QuickLink {
   id: string;
+  // Empty means follow the URL's domain; existing custom titles remain untouched.
   title: string;
   url: string;
   groupId: string | null;
@@ -33,6 +34,14 @@ export function normalizeLinkUrl(input: string): string {
   } catch { throw new Error("请输入有效的网址，不要包含账户密码"); }
 }
 
+export function linkDomain(url: string): string {
+  return new URL(url).hostname.replace(/^www\./i, "");
+}
+
+export function linkTitle(link: Pick<QuickLink, "title" | "url">): string {
+  return link.title.trim() || linkDomain(link.url);
+}
+
 export type NavigationAction =
   | { type: "save-link"; link: QuickLink }
   | { type: "delete-link"; id: string }
@@ -45,7 +54,6 @@ export function applyNavigationAction(data: NavigationData, action: NavigationAc
   switch (action.type) {
     case "save-link": {
       const title = action.link.title.trim();
-      if (!title) throw new Error("请填写链接名称");
       const link = { ...action.link, title, url: normalizeLinkUrl(action.link.url),
         groupId: data.groups.some(group => group.id === action.link.groupId) ? action.link.groupId : null };
       return { ...data, links: data.links.some(row => row.id === link.id)

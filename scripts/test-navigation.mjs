@@ -24,6 +24,16 @@ test("删除分组保留链接及其固定状态", () => {
   assert.equal(next.links[0].pinned, true);
   assert.equal(original.links[0].groupId, "g");
 });
+test("名称留空跟随域名，编辑网址不会固化旧域名，自定义名称保留", () => {
+  const saved = nav.applyNavigationAction(nav.emptyNavigation(), { type: "save-link", link: { ...link("a"), title: "  ", url: "https://www.example.com/article/123" } });
+  assert.equal(saved.links[0].title, "");
+  assert.equal(nav.linkTitle(saved.links[0]), "example.com");
+  const updated = nav.applyNavigationAction(saved, { type: "save-link", link: { ...saved.links[0], url: "docs.example.org/start" } });
+  assert.equal(nav.linkTitle(updated.links[0]), "docs.example.org");
+  assert.equal(nav.linkTitle({ title: "我的文档", url: "https://docs.example.org" }), "我的文档");
+  assert.equal(nav.linkDomain("https://www2.example.org/path"), "www2.example.org");
+  assert.throws(() => nav.applyNavigationAction(saved, { type: "save-group", group: { id: "g", name: "  " } }));
+});
 test("编辑、排序和固定不改变链接身份或其他记录", () => {
   const data = { groups: [], links: [link("a"), link("b"), link("c")] };
   const moved = nav.applyNavigationAction(data, { type: "move-link", id: "a", neighborId: "c" });

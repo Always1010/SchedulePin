@@ -33,6 +33,19 @@ try {
   await page.getByRole("button", { name: "保存", exact: true }).click();
   await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
   assert.equal(await page.locator(".shortcut-row a").first().getAttribute("href"), "https://example.com/project");
+  await page.getByRole("button", { name: "添加入口", exact: true }).click();
+  await page.getByLabel("网址", { exact: true }).fill("https://www.example.org/article/1");
+  assert.equal(await page.locator(".shortcut-entry-preview .shortcut-copy").textContent(), "example.org");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "整理", exact: true }).click();
+  await page.getByRole("button", { name: "编辑 example.org", exact: true }).click();
+  assert.equal(await page.getByLabel("名称", { exact: true }).inputValue(), "");
+  await page.getByLabel("网址", { exact: true }).fill("https://docs.example.org/start");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "编辑 docs.example.org", exact: true }).waitFor();
+  await page.getByRole("button", { name: "完成", exact: true }).click();
   await page.evaluate(() => {
     const now = new Date();
     const day = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");

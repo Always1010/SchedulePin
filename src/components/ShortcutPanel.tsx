@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, ChevronDown, ExternalLink, FolderPlus, Pencil, Pin, Plus, Search, Trash2, X } from "lucide-react";
 import type { LinkGroup, NavigationAction, NavigationData, NewTabPreferences, QuickLink } from "../navigation";
+import { linkDomain, linkTitle, normalizeLinkUrl } from "../navigation";
 import "./shortcuts.css";
 
 interface Props {
@@ -21,6 +22,8 @@ function ShortcutEditor({ editor, groups, onSave, onClose }: {
   const [pinned, setPinned] = useState(editor.kind === "link" ? editor.value.pinned : false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  let previewUrl = "";
+  try { if (url.trim()) previewUrl = normalizeLinkUrl(url); } catch { /* Validate on save. */ }
   useEffect(() => { dialog.current?.showModal(); }, []);
   return <dialog ref={dialog} className="shortcut-dialog" aria-labelledby="shortcut-editor-title" onCancel={event => { if (saving) event.preventDefault(); }} onClose={onClose}>
     <form onSubmit={async event => {
@@ -34,14 +37,15 @@ function ShortcutEditor({ editor, groups, onSave, onClose }: {
       finally { setSaving(false); }
     }}>
       <div className="shortcut-editor-heading"><h2 id="shortcut-editor-title">{editor.kind === "link" ? "网站入口" : "网站分组"}</h2><button type="button" disabled={saving} onClick={() => dialog.current?.close()} aria-label="关闭"><X size={18} /></button></div>
-      <label>名称<input autoFocus required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
+      {editor.kind === "link" && <label>网址<input autoFocus required value={url} onChange={event => setUrl(event.target.value)} placeholder="example.com" inputMode="url" /></label>}
+      <label>{editor.kind === "link" ? "名称（选填）" : "名称"}<input aria-label="名称" autoFocus={editor.kind === "group"} required={editor.kind === "group"} maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder={editor.kind === "link" ? "留空使用域名" : undefined} /></label>
       {editor.kind === "link" && <>
-        <label>网址<input required value={url} onChange={event => setUrl(event.target.value)} placeholder="https://example.com" inputMode="url" /></label>
+        {previewUrl && <div className="shortcut-entry-preview" aria-live="polite"><span className="shortcut-copy">{linkTitle({ title: name, url: previewUrl })}</span></div>}
         <label>分组<select aria-label="分组" value={groupId} onChange={event => setGroupId(event.target.value)}><option value="">未分组</option>{groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
         <label className="shortcut-checkbox"><input type="checkbox" checked={pinned} onChange={event => setPinned(event.target.checked)} />固定到常用入口</label>
       </>}
       {error && <p role="alert" className="shortcut-error">{error}</p>}
-      <div className="shortcut-editor-actions"><button type="button" disabled={saving} onClick={() => dialog.current?.close()}>取消</button><button type="submit" disabled={saving || !name.trim()}>{saving ? "保存中…" : "保存"}</button></div>
+      <div className="shortcut-editor-actions"><button type="button" disabled={saving} onClick={() => dialog.current?.close()}>取消</button><button type="submit" disabled={saving || !(editor.kind === "link" ? url.trim() : name.trim())}>{saving ? "保存中…" : "保存"}</button></div>
     </form>
   </dialog>;
 }
@@ -53,7 +57,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const q = query.trim().toLocaleLowerCase();
-  const match = (link: QuickLink) => !q || `${link.title} ${link.url} ${data.groups.find(group => group.id === link.groupId)?.name ?? ""}`.toLocaleLowerCase().includes(q);
+  const match = (link: QuickLink) => !q || `${linkTitle(link)} ${link.url} ${data.groups.find(group => group.id === link.groupId)?.name ?? ""}`.toLocaleLowerCase().includes(q);
   const act = async (action: NavigationAction) => {
     setBusy(true); setError("");
     try { await onAction?.(action); }
@@ -61,15 +65,15 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
     finally { setBusy(false); }
   };
   const rows = (links: QuickLink[]) => <div className="shortcut-links">{links.map((link, index) => <div className="shortcut-row" key={link.id}>
-    <a href={link.url} onClick={onAction ? undefined : event => event.preventDefault()} aria-label={`${link.title}，${link.url}`}>
-      <span className="shortcut-number">{String(index + 1).padStart(2, "0")}</span><span className="shortcut-copy">{link.title}{preferences.showDomains && <small>{new URL(link.url).host}</small>}</span><ExternalLink size={12} />
+    <a href={link.url} onClick={onAction ? undefined : event => event.preventDefault()} aria-label={`${linkTitle(link)}，${link.url}`}>
+      <span className="shortcut-number">{String(index + 1).padStart(2, "0")}</span><span className="shortcut-copy">{linkTitle(link)}{preferences.showDomains && linkTitle(link) !== linkDomain(link.url) && <small>{linkDomain(link.url)}</small>}</span><ExternalLink size={12} />
     </a>
     {managing && <div className="shortcut-row-actions">
-      <button type="button" disabled={busy} onClick={() => setEditor({ kind: "link", value: link })} aria-label={`编辑 ${link.title}`}><Pencil size={14} /></button>
-      <button type="button" disabled={busy} onClick={() => void act({ type: "pin-link", id: link.id, pinned: !link.pinned })} aria-label={`${link.pinned ? "取消固定" : "固定"} ${link.title}`} aria-pressed={link.pinned}><Pin size={14} /></button>
-      <button type="button" disabled={busy || index === 0 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index - 1].id })} aria-label={`上移 ${link.title}`}><ArrowUp size={14} /></button>
-      <button type="button" disabled={busy || index === links.length - 1 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index + 1].id })} aria-label={`下移 ${link.title}`}><ArrowDown size={14} /></button>
-      <button type="button" disabled={busy} onClick={() => void act({ type: "delete-link", id: link.id })} aria-label={`删除 ${link.title}`}><Trash2 size={14} /></button>
+      <button type="button" disabled={busy} onClick={() => setEditor({ kind: "link", value: link })} aria-label={`编辑 ${linkTitle(link)}`}><Pencil size={14} /></button>
+      <button type="button" disabled={busy} onClick={() => void act({ type: "pin-link", id: link.id, pinned: !link.pinned })} aria-label={`${link.pinned ? "取消固定" : "固定"} ${linkTitle(link)}`} aria-pressed={link.pinned}><Pin size={14} /></button>
+      <button type="button" disabled={busy || index === 0 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index - 1].id })} aria-label={`上移 ${linkTitle(link)}`}><ArrowUp size={14} /></button>
+      <button type="button" disabled={busy || index === links.length - 1 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index + 1].id })} aria-label={`下移 ${linkTitle(link)}`}><ArrowDown size={14} /></button>
+      <button type="button" disabled={busy} onClick={() => void act({ type: "delete-link", id: link.id })} aria-label={`删除 ${linkTitle(link)}`}><Trash2 size={14} /></button>
     </div>}
   </div>)}</div>;
   const pinned = data.links.filter(link => link.pinned && match(link));
