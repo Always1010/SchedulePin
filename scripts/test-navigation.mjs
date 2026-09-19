@@ -75,3 +75,10 @@ test("并发写入合并最新数据，导航写入不触及任务和主题", as
   assert.ok(changed.every(key => [nav.NAVIGATION_KEY, nav.NEWTAB_KEY].includes(key)));
   assert.equal(refreshes, 4); unsubscribe(); assert.equal(listeners.size, 0);
 });
+test("拖动移动到目标位置，保持分组及无关入口顺序", () => {
+  const data = { groups: [], links: [link("a"), link("other", "work"), link("b"), link("c")] };
+  const next = nav.applyNavigationAction(data, { type: "reorder-link", id: "a", overId: "c" });
+  assert.deepEqual(next.links.map(row => row.id), ["b", "other", "c", "a"]);
+  assert.deepEqual(nav.applyNavigationAction(data, { type: "reorder-link", id: "a", overId: "other" }), data);
+  assert.deepEqual(data.links.map(row => row.id), ["a", "other", "b", "c"]);
+});

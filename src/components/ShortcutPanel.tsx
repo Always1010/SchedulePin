@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Check, ChevronDown, ExternalLink, FolderPlus, Penci
 import type { LinkGroup, NavigationAction, NavigationData, NewTabPreferences, QuickLink } from "../navigation";
 import { linkDomain, linkTitle, normalizeLinkUrl } from "../navigation";
 import { SiteIcon } from "./SiteIcon";
+import { ShortcutSortArea, SortableShortcut } from "./SortableShortcuts";
 import "./shortcuts.css";
 
 interface Props {
@@ -52,6 +53,20 @@ function ShortcutEditor({ editor, groups, onSave, onClose }: {
 }
 
 export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Props) {
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!onAction) return;
+    const doc = searchInput.current?.ownerDocument;
+    const focusSearch = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey || event.isComposing || event.defaultPrevented
+        || target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')
+        || doc?.querySelector('dialog[open], [role="dialog"]')) return;
+      event.preventDefault(); searchInput.current?.focus();
+    };
+    doc?.addEventListener("keydown", focusSearch);
+    return () => doc?.removeEventListener("keydown", focusSearch);
+  }, [onAction]);
   const [query, setQuery] = useState("");
   const [managing, setManaging] = useState(false);
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -65,7 +80,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
     catch (reason) { setError(reason instanceof Error ? reason.message : "操作失败，请重试"); }
     finally { setBusy(false); }
   };
-  const rows = (links: QuickLink[]) => <div className="shortcut-links">{links.map((link, index) => <div className="shortcut-row" key={link.id}>
+  const rows = (links: QuickLink[]) => <ShortcutSortArea ids={links.map(link => link.id)} disabled={busy || Boolean(q) || !onAction} onMove={(id, overId) => void act({ type: "reorder-link", id, overId })}><div className="shortcut-links">{links.map((link, index) => <SortableShortcut id={link.id} title={linkTitle(link)} key={link.id} disabled={busy || Boolean(q) || !onAction} editable={Boolean(onAction)}>
     <a href={link.url} onClick={onAction ? undefined : event => event.preventDefault()} aria-label={`${linkTitle(link)}，${link.url}`}>
       <SiteIcon url={link.url} /><span className="shortcut-copy">{linkTitle(link)}{preferences.showDomains && linkTitle(link) !== linkDomain(link.url) && <small>{linkDomain(link.url)}</small>}</span><ExternalLink size={12} />
     </a>
@@ -76,12 +91,12 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
       <button type="button" disabled={busy || index === links.length - 1 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index + 1].id })} aria-label={`下移 ${linkTitle(link)}`}><ArrowDown size={14} /></button>
       <button type="button" disabled={busy} onClick={() => void act({ type: "delete-link", id: link.id })} aria-label={`删除 ${linkTitle(link)}`}><Trash2 size={14} /></button>
     </div>}
-  </div>)}</div>;
+  </SortableShortcut>)}</div></ShortcutSortArea>;
   const pinned = data.links.filter(link => link.pinned && match(link));
   const sections = [...data.groups, { id: "", name: "未分组" }];
   return <nav className="shortcut-panel" aria-label="快捷访问">
     <div className="shortcut-heading"><h2>快捷访问</h2>{onAction && <button type="button" onClick={() => setManaging(!managing)} aria-pressed={managing}>{managing ? <><Check size={14} />完成</> : "整理"}</button>}</div>
-    <label className="shortcut-search"><Search size={15} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="查找入口…" aria-label="查找网站入口" />{query && <button type="button" onClick={() => setQuery("")} aria-label="清除查找"><X size={14} /></button>}</label>
+    <label className="shortcut-search"><Search size={15} /><input ref={searchInput} value={query} onChange={event => setQuery(event.target.value)} placeholder="查找入口…" aria-label="查找网站入口" aria-keyshortcuts="/" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清除查找"><X size={14} /></button> : <kbd aria-hidden="true">/</kbd>}</label>
     {pinned.length > 0 && <section><h3 className="shortcut-section-label"><Pin size={13} aria-hidden="true" />已固定<small>{pinned.length}</small></h3>{rows(pinned)}</section>}
     {sections.map(group => {
       const links = data.links.filter(link => !link.pinned && (link.groupId ?? "") === group.id && match(link));

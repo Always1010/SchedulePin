@@ -15,6 +15,13 @@
 .shortcut-section-label small { margin-left: auto; }
 .shortcut-section-label small, .shortcut-group-heading small { padding: 1px 6px; border-radius: 6px; background: var(--navigation-soft); font-size: calc(11px * var(--font-scale)); font-variant-numeric: tabular-nums; }
 .shortcut-row { margin: 3px -5px; border-radius: min(11px, var(--card-radius)); transition: background .16s; }
+.shortcut-row { position: relative; }
+.shortcut-row:has(.shortcut-drag-handle) a { padding-right: 25px; }
+.shortcut-row:has(.shortcut-drag-handle) a > svg { display: none; }
+.shortcut-panel .shortcut-drag-handle { position: absolute; right: 0; top: 10px; padding: 3px; cursor: grab; touch-action: none; opacity: .4; }
+.shortcut-panel .shortcut-drag-handle:focus-visible, .shortcut-row:hover .shortcut-drag-handle { opacity: 1; }
+.shortcut-row.shortcut-dragging { background: var(--paper); box-shadow: 0 10px 30px #0002; }
+.shortcut-search kbd { font: inherit; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
 .shortcut-row:hover, .shortcut-row:focus-within { background: var(--surface); }
 .shortcut-row a { display: flex; align-items: center; gap: 10px; padding: var(--nav-row-padding, 10px) 6px; text-decoration: none; color: inherit; min-height: 44px; border-radius: inherit; transition: transform .16s; }
 .shortcut-row a:hover, .shortcut-row a:focus-visible { transform: translateX(2px); }

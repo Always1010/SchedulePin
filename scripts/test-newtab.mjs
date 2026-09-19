@@ -73,6 +73,23 @@ try {
     localStorage.setItem("schedulepin.navigation.v1", JSON.stringify(navigation));
   });
   await page.reload(); await page.locator(".task-row").first().waitFor();
+  await page.locator(".shortcut-heading h2").click();
+  await page.keyboard.press("/");
+  assert.equal(await page.locator(".shortcut-search input").evaluate(el => el === document.activeElement), true);
+  assert.equal(await page.locator(".shortcut-search input").inputValue(), "");
+  const quick = page.getByRole("textbox", { name: "快速添加 To-Do", exact: true });
+  await quick.fill("测试"); await quick.press("/");
+  assert.equal(await quick.inputValue(), "测试/"); await quick.fill("");
+  const drag = page.getByRole("button", { name: "拖动 网站入口 1 调整入口顺序", exact: true });
+  const start = await drag.boundingBox();
+  const target = await page.locator('[data-link-id="link-2"]').boundingBox();
+  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+  await page.mouse.down(); await page.mouse.move(start.x + start.width / 2, target.y + target.height / 2, { steps: 12 }); await page.mouse.up();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.navigation.v1")).links[2].id === "link-0");
+  await page.reload(); await page.locator('[data-link-id="link-0"]').waitFor();
+  assert.equal(await page.locator(".shortcut-row").nth(2).getAttribute("data-link-id"), "link-0");
+  await page.evaluate(() => { const data = JSON.parse(localStorage.getItem("schedulepin.navigation.v1")); data.links.sort((a,b) => Number(a.id.split('-')[1]) - Number(b.id.split('-')[1])); localStorage.setItem("schedulepin.navigation.v1", JSON.stringify(data)); });
+  await page.reload(); await page.locator(".task-row").first().waitFor();
   const oldSettings = await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2"));
   const beside = async () => {
     const bounds = await page.evaluate(() => {

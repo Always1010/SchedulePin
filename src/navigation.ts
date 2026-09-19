@@ -47,6 +47,7 @@ export type NavigationAction =
   | { type: "delete-link"; id: string }
   | { type: "pin-link"; id: string; pinned: boolean }
   | { type: "move-link"; id: string; neighborId: string }
+  | { type: "reorder-link"; id: string; overId: string }
   | { type: "save-group"; group: LinkGroup }
   | { type: "delete-group"; id: string };
 
@@ -68,6 +69,18 @@ export function applyNavigationAction(data: NavigationData, action: NavigationAc
       if (a < 0 || b < 0) return data;
       [links[a], links[b]] = [links[b], links[a]];
       return { ...data, links };
+    }
+    case "reorder-link": {
+      const current = data.links.find(link => link.id === action.id);
+      if (!current) return data;
+      const sameSection = (link: QuickLink) => current.pinned ? link.pinned : !link.pinned && link.groupId === current.groupId;
+      const section = data.links.filter(sameSection);
+      const from = section.findIndex(link => link.id === action.id);
+      const to = section.findIndex(link => link.id === action.overId);
+      if (to < 0 || from === to) return data;
+      section.splice(to, 0, section.splice(from, 1)[0]);
+      let index = 0;
+      return { ...data, links: data.links.map(link => sameSection(link) ? section[index++] : link) };
     }
     case "save-group": {
       const name = action.group.name.trim();
