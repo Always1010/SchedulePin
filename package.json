@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test:navigation": "node --test scripts/test-navigation.mjs",
+    "test:ui": "node scripts/test-newtab.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

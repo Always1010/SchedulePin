@@ -31,6 +31,7 @@ export function visualDesignStyle(settings: AppSettings): DesignVariables {
     "--design-principle-text": principle.text,
     "--design-principle-decoration": principle.decoration,
     "--density-page-top": px(22, 46, density),
+    "--nav-row-padding": px(7, 12, density),
     "--density-page-bottom": px(72, 116, density),
     "--density-compact-page-top": px(16, 28, density),
     "--density-hero-bottom": px(17, 29, density),
