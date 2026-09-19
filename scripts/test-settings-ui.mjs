@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { pathToFileURL } from "node:url";
+import { build, preview } from "vite";
+
+const runtime = process.env.SCHEDULEPIN_PLAYWRIGHT_PATH ? pathToFileURL(process.env.SCHEDULEPIN_PLAYWRIGHT_PATH).href : "playwright";
+const { chromium } = await import(runtime);
+await build({ logLevel: "error" });
+const server = await preview({ preview: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+const browser = await chromium.launch({ headless: true, ...(process.env.SCHEDULEPIN_BROWSER_PATH ? { executablePath: process.env.SCHEDULEPIN_BROWSER_PATH } : {}) });
+const output = new URL("../.tools/settings-tests/", import.meta.url); await mkdir(output, { recursive: true });
+try {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(base); await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.getByRole("navigation", { name: "设置分类" }).waitFor();
+  for (const label of ["整体样式", "页面背景", "快捷导航", "待办区域", "原则卡片", "桌面助手", "显示器", "计划布局"]) assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, `${label} has one entry`);
+  assert.equal(await page.getByText("展开完整待办", { exact: true }).count(), 0, "task visibility is not mixed into shortcuts");
+  await page.getByRole("button", { name: "待办区域", exact: true }).click(); await page.getByText("展开完整待办", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  const principle = page.locator("textarea.principle-editor"); await principle.fill("先完成当前的一件事。\n再继续下一件事。");
+  await page.waitForFunction(value => localStorage.getItem("schedulepin.settings.v2")?.includes(value), "先完成当前的一件事。"); await page.reload();
+  await page.getByRole("button", { name: "设置", exact: true }).click(); await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  assert.equal(await page.locator("textarea.principle-editor").inputValue(), "先完成当前的一件事。\n再继续下一件事。", "principle content saves immediately");
+  await page.getByLabel("新标签页明暗模式", { exact: true }).count().then(count => assert.equal(count, 0, "background overrides stay out of the principle page"));
+  await page.getByRole("button", { name: "整体样式", exact: true }).click();
+  await page.getByLabel("新标签页明暗模式", { exact: true }).selectOption("dark");
+  await page.getByRole("button", { name: "恢复整体样式默认值", exact: true }).click(); await page.waitForFunction(() => localStorage.getItem("schedulepin.settings.v2") !== null);
+  assert.equal(await page.getByLabel("新标签页明暗模式", { exact: true }).inputValue(), "dark", "restoring overall style preserves new-tab override");
+  await page.screenshot({ path: fileURLToPath(new URL("overall.png", output)), fullPage: true });
+  await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  await page.locator(".appearance-controls .toggle-row").click();
+  assert.equal(await page.getByText("新标签页的卡片颜色由背景配色控制；侧边栏与桌面计划仍使用下面保留的独立文字样式和主题。", { exact: true }).count(), 1, "follow mode explains its scope");
+  assert.equal(await page.getByText("卡片字体", { exact: true }).count(), 1, "follow mode keeps independent typography");
+  await page.locator(".appearance-controls .toggle-row").click(); await page.getByRole("button", { name: "恢复卡片样式默认值", exact: true }).click();
+  assert.equal(await page.locator("textarea.principle-editor").inputValue(), "先完成当前的一件事。\n再继续下一件事。", "restoring card style never clears content");
+  await page.screenshot({ path: fileURLToPath(new URL("principle.png", output)), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: fileURLToPath(new URL("narrow.png", output)), fullPage: true });
+  await context.close();
+  console.log("PASS: settings navigation ownership, immediate persistence, scoped restores and principle follow mode.");
+} finally { await browser.close(); await server.close(); }

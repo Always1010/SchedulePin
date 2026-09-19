@@ -1,149 +1,54 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft, Check, ChevronRight, Download, ExternalLink, Laptop,
-  Monitor, Palette, RefreshCw, RotateCcw, Type, Unplug, Link,
-} from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Check, Download, ExternalLink, Laptop, Monitor, RefreshCw, RotateCcw, Type, Unplug } from "lucide-react";
 import type { AppSettings, HelperStatus, MonitorInfo } from "../types";
+import { defaultBackground, type BackgroundPreferences } from "../backgroundModel";
 import { defaultDesktopLayout, DesktopLayoutEditor } from "./DesktopLayoutEditor";
 import { ShortcutPanel } from "./ShortcutPanel";
 import { useNavigation } from "../useNavigation";
 import { changeNavigation, changeNewTabPreferences, type NewTabPreferences } from "../navigation";
+import { OverallStyleEditor, PrincipleStyleEditor } from "./AppearanceEditor";
+import { SettingsNavigation, type SettingsSection } from "./SettingsNavigation";
 
 interface Props {
-  settings: AppSettings;
-  helper: HelperStatus;
-  initialSection?: SettingsSection;
-  onChange: (settings: AppSettings) => void;
-  onRefreshHelper: () => void;
-  onRestoreWallpaper: () => void;
-  onOpenAppearance: () => void;
-  onOpenBackground: () => void;
-  onBack: () => void;
+  settings: AppSettings; helper: HelperStatus; initialSection?: SettingsSection; onPatch: (patch: Partial<AppSettings>) => void;
+  onRefreshHelper: () => void; onRestoreWallpaper: () => void; onBack: () => void; onNavigate: (section: SettingsSection) => void;
+  background: BackgroundPreferences; onBackgroundPatch: (patch: Partial<BackgroundPreferences>) => void;
+  backgroundPage: ReactNode; preview?: ReactNode; status?: "saved" | "saving" | "error"; error?: string; onRetry?: () => void;
 }
-
-type SettingsSection = "hub" | "principle" | "desktop" | "shortcuts";
-
-const previewMonitor: MonitorInfo = {
-  id: "preview", index: 0, name: "显示器预览", x: 0, y: 0,
-  width: 1920, height: 1080, primary: true,
-};
+const previewMonitor: MonitorInfo = { id: "preview", index: 0, name: "显示器预览", x: 0, y: 0, width: 1920, height: 1080, primary: true };
 const releasesUrl = "https://github.com/Always1010/SchedulePin/releases";
+const titles: Record<SettingsSection, [string, string]> = {
+  style: ["整体样式", "设置浏览器页面的默认主题、字体与布局。"], background: ["页面背景", "只影响新标签页的背景与壁纸。"],
+  shortcuts: ["快捷导航", "管理常用网站、分组与导航位置。"], tasks: ["待办区域", "控制新标签页中的计划显示方式。"],
+  principle: ["原则卡片", "管理 Principle 的内容和卡片样式。"], assistant: ["桌面助手", "连接桌面助手并管理桌面计划。"],
+  monitor: ["显示器", "选择桌面计划显示的屏幕范围。"], layout: ["计划布局", "调整桌面计划的位置、大小和透明度。"],
+};
 
-export function SettingsPage({ settings, helper, initialSection = "hub", onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onOpenBackground, onBack }: Props) {
+export function SettingsPage({ settings, helper, initialSection = "style", onPatch, onRefreshHelper, onRestoreWallpaper, onBack, onNavigate, background, onBackgroundPatch, backgroundPage, preview, status = "saved", error, onRetry }: Props) {
   const [section, setSection] = useState<SettingsSection>(initialSection);
-  const [draft, setDraft] = useState(settings);
   const { navigation, preferences, navigationReady, navigationError } = useNavigation();
   const [preferenceError, setPreferenceError] = useState("");
-  const changePreferences = async (next: Partial<NewTabPreferences>) => {
-    setPreferenceError("");
-    try { await changeNewTabPreferences(next); } catch { setPreferenceError("无法保存导航偏好，请重试。"); }
-  };
-  useEffect(() => setDraft(settings), [settings]);
   useEffect(() => setSection(initialSection), [initialSection]);
-
+  const choose = (next: SettingsSection) => { setSection(next); onNavigate(next); };
+  const changePreferences = async (next: Partial<NewTabPreferences>) => { setPreferenceError(""); try { await changeNewTabPreferences(next); } catch { setPreferenceError("无法保存页面偏好，请重试。"); } };
   const monitors = helper.monitors.length ? helper.monitors : [previewMonitor];
-  const activeMonitor = useMemo(() => monitors.find((monitor) => monitor.id === draft.selectedMonitorId) ?? monitors[0], [monitors, draft.selectedMonitorId]);
-  const patch = (next: Partial<AppSettings>) => {
-    const value = { ...draft, ...next };
-    setDraft(value);
-    onChange(value);
-  };
-  const layout = draft.layouts[activeMonitor.id] ?? defaultDesktopLayout;
-  const goBack = () => {
-    if (section === "hub" || initialSection !== "hub") onBack();
-    else setSection("hub");
-  };
-
-  return (
-    <main className="settings-page page-shell">
-      <div className="page-title-row">
-        <button type="button" className="back-button" onClick={goBack}><ArrowLeft size={17} />返回</button>
-        <div><span className="eyebrow">Settings</span><h1>{section === "hub" ? "设置" : section === "principle" ? "Principle" : section === "shortcuts" ? "快捷访问" : "桌面展示"}</h1><p>{section === "hub" ? "选择需要调整的部分。" : section === "principle" ? "编辑长期遵循的做事原则。" : section === "shortcuts" ? "管理常用网站和新标签页布局。" : "配置壁纸、显示器和桌面助手。"}</p></div>
-      </div>
-
-      {section === "hub" && (
-        <div className="settings-hub">
-          <button type="button" className="settings-hub-card" onClick={() => setSection("shortcuts")}>
-            <span className="hub-icon"><Link size={21} /></span>
-            <div><h2>快捷访问</h2><p>管理链接、分组、导航位置和待办展示。</p><span className="hub-preview-text">{navigation.links.length} 个入口</span></div>
-            <ChevronRight size={18} />
-          </button>
-          <button type="button" className="settings-hub-card appearance-entry" onClick={onOpenAppearance}>
-            <span className="hub-icon"><Palette size={21} /></span>
-            <div><h2>外观</h2><p>调整页面整体外观，并单独定制 Principle。</p><span className="appearance-summary"><i /><i /><i />{Math.round(draft.fontScale * 100)}% 字号 · {Math.round(draft.densityLevel)}% 间距 · {draft.cardRadius}px 圆角</span></div>
-            <ChevronRight size={18} />
-          </button>
-          <button type="button" className="settings-hub-card background-entry" onClick={onOpenBackground}><span className="hub-icon"><Palette size={21}/></span><div><h2>背景与壁纸</h2><p>纸感、流彩、风景；上传、收藏与自动换图。</p><span className="hub-preview-text">新标签页独立外观</span></div><ChevronRight size={18}/></button>
-          <button type="button" className="settings-hub-card" onClick={() => setSection("principle")}>
-            <span className="hub-icon"><Type size={21} /></span>
-            <div><h2>Principle</h2><p>编辑计划区域中的原则段落。</p><span className="hub-preview-text">{draft.principle || "尚未填写 Principle"}</span></div>
-            <ChevronRight size={18} />
-          </button>
-          <button type="button" className="settings-hub-card desktop-entry" onClick={() => setSection("desktop")}>
-            <span className="hub-icon"><Monitor size={21} /></span>
-            <div><h2>桌面展示</h2><p>桌面助手、显示器、位置、大小与透明度。</p><span className={helper.connected ? "hub-status connected" : "hub-status"}>{helper.connected ? `已连接 · ${helper.monitors.length} 块显示器` : "浏览器独立模式"}</span></div>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
-
-      {section === "shortcuts" && <section className="settings-card shortcut-settings">
-        <div className="shortcut-settings-options">
-          <label>导航位置<select aria-label="导航位置" value={preferences.side} disabled={!navigationReady} onChange={event => void changePreferences({ side: event.target.value as "left" | "right" })}><option value="left">左侧</option><option value="right">右侧</option></select></label>
-          <label><input type="checkbox" checked={preferences.showDomains} disabled={!navigationReady} onChange={event => void changePreferences({ showDomains: event.target.checked })} />显示域名</label>
-          <label><input type="checkbox" checked={preferences.tasksVisible} disabled={!navigationReady} onChange={event => void changePreferences({ tasksVisible: event.target.checked })} />展开完整待办</label>
-        </div>
-        {(navigationError || preferenceError) && <p role="alert">{navigationError || preferenceError}</p>}
-        {navigationReady && <ShortcutPanel data={navigation} preferences={preferences} onAction={changeNavigation} onPreferences={changeNewTabPreferences} />}
+  const activeMonitor = useMemo(() => monitors.find(monitor => monitor.id === settings.selectedMonitorId) ?? monitors[0], [monitors, settings.selectedMonitorId]);
+  const [heading, description] = titles[section];
+  const desktopDisabled = !helper.connected;
+  return <main className="settings-page page-shell">
+    <div className="page-title-row"><button type="button" className="back-button" onClick={onBack}>返回</button><div><span className="eyebrow">Settings</span><h1>{heading}</h1><p>{description}</p></div></div>
+    <div className="settings-layout"><SettingsNavigation section={section} onSelect={choose} /><div className="settings-content">
+      {status !== "saved" && <p className={`settings-status ${status === "error" ? "error" : ""}`} role={status === "error" ? "alert" : "status"}>{status === "saving" ? "正在保存修改…" : `${error || "保存失败，修改仍保留在当前页面。"}`} {status === "error" && onRetry && <button type="button" onClick={onRetry}>重试</button>}</p>}
+      {section === "style" && <><OverallStyleEditor settings={settings} onPatch={onPatch} saving={status === "saving"} /><section className="settings-card settings-detail-card"><div className="settings-card-heading"><Type size={18}/><div><h2>新标签页覆盖</h2><p>只在新标签页需要与默认主题不同时使用。</p></div></div><div className="settings-detail-actions"><button type="button" className="restore-appearance" onClick={() => onBackgroundPatch({ appearance: defaultBackground.appearance, accent: defaultBackground.accent, panelOpacity: defaultBackground.panelOpacity })}><RotateCcw size={15}/>恢复新标签页覆盖默认值</button></div><label>明暗模式<select aria-label="新标签页明暗模式" value={background.appearance} onChange={event => onBackgroundPatch({ appearance: event.target.value as BackgroundPreferences["appearance"] })}><option value="inherit">使用整体样式</option><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label><label>强调色<select aria-label="新标签页强调色" value={background.accent} onChange={event => onBackgroundPatch({ accent: event.target.value as BackgroundPreferences["accent"] })}><option value="original">使用整体样式</option><option value="auto">从壁纸取色</option><option value="green">青绿</option><option value="blue">海蓝</option><option value="violet">紫色</option><option value="orange">暖橙</option></select></label><div className="range-heading"><span>面板不透明度</span><strong>{background.panelOpacity}%</strong></div><input className="range" aria-label="面板不透明度" type="range" min="60" max="100" value={background.panelOpacity} onChange={event => onBackgroundPatch({ panelOpacity: Number(event.target.value) })}/><p className="field-help">恢复整体样式不会清除这里的单独覆盖。</p></section>{preview}</>}
+      {section === "background" && backgroundPage}
+      {section === "shortcuts" && <section className="settings-card settings-detail-card shortcut-settings"><div className="shortcut-settings-options"><label>导航位置<select aria-label="导航位置" value={preferences.side} disabled={!navigationReady} onChange={event => void changePreferences({ side: event.target.value as "left" | "right" })}><option value="left">左侧</option><option value="right">右侧</option></select></label><label><input type="checkbox" checked={preferences.showDomains} disabled={!navigationReady} onChange={event => void changePreferences({ showDomains: event.target.checked })} />显示域名</label></div>{(navigationError || preferenceError) && <p role="alert">{navigationError || preferenceError}</p>}{navigationReady && <ShortcutPanel data={navigation} preferences={preferences} onAction={changeNavigation} onPreferences={changeNewTabPreferences}/>}</section>}
+      {section === "tasks" && <section className="settings-card settings-detail-card"><div className="settings-card-heading"><Type size={18}/><div><h2>待办区域</h2><p>决定新标签页是否直接展示完整计划。</p></div></div><label className="toggle-row"><span className="setting-title"><span><strong>展开完整待办</strong><small>关闭后只显示 Principle 和展开按钮</small></span></span><input className="visually-hidden" type="checkbox" checked={preferences.tasksVisible} disabled={!navigationReady} onChange={event => void changePreferences({ tasksVisible: event.target.checked })}/><i className={preferences.tasksVisible ? "toggle active" : "toggle"}><b/></i></label>{preferenceError && <p role="alert">{preferenceError}</p>}</section>}
+      {section === "principle" && <><section className="settings-card settings-detail-card"><div className="settings-card-heading"><Type size={18}/><div><h2>Principle 内容</h2><p>内容和样式分开保存；换行会保留在新标签页和桌面计划中。</p></div></div><textarea className="settings-textarea principle-editor" rows={9} value={settings.principle} onChange={event => onPatch({ principle: event.target.value })} placeholder="写下做事时希望遵循的原则…"/><small className="field-help">内容即时保存。</small></section><PrincipleStyleEditor settings={settings} onPatch={onPatch} saving={status === "saving"} followBackground={background.principleFollow} onFollowChange={principleFollow => onBackgroundPatch({ principleFollow })}/>{preview}</>}
+      {["assistant", "monitor", "layout"].includes(section) && <section className="settings-card settings-detail-card desktop-settings-card">
+        {section === "assistant" && <><div className={helper.connected ? "helper-card connected" : "helper-card"}><span className="helper-icon">{helper.connected ? <Check size={17}/> : <Unplug size={17}/>}</span><span><strong>{helper.connected ? "桌面助手已连接" : "浏览器独立模式"}</strong><small>{helper.connected ? `版本 ${helper.version ?? "未知"} · ${helper.monitors.length} 块显示器` : "桌面计划需要本地助手。"}</small></span><button onClick={onRefreshHelper} aria-label="重新检测"><RefreshCw size={14}/></button></div>{!helper.connected && <div className="release-download-card"><span><Download size={17}/></span><div><strong>下载 Windows 桌面助手</strong><small>从 GitHub Releases 获取最新版助手和安装说明。</small></div><a href={releasesUrl} target="_blank" rel="noreferrer">打开 Release <ExternalLink size={13}/></a></div>}<button className="toggle-row" disabled={desktopDisabled} onClick={() => onPatch({ desktopEnabled: !settings.desktopEnabled })}><span className="setting-title"><Monitor size={17}/><span><strong>显示桌面计划</strong><small>生成壁纸，不覆盖普通应用</small></span></span><i className={settings.desktopEnabled ? "toggle active" : "toggle"}><b/></i></button><button className="restore-wallpaper" disabled={desktopDisabled} onClick={onRestoreWallpaper}><RotateCcw size={15}/>恢复启用前的原壁纸</button></>}
+        {section === "monitor" && <><div className="segmented"><button disabled={desktopDisabled} className={settings.displayMode === "single" ? "active" : ""} onClick={() => onPatch({ displayMode: "single" })}>指定屏幕</button><button disabled={desktopDisabled} className={settings.displayMode === "all" ? "active" : ""} onClick={() => onPatch({ displayMode: "all" })}>全部屏幕</button></div><div className="monitor-list">{monitors.map(monitor => <button type="button" key={monitor.id} disabled={desktopDisabled} className={activeMonitor.id === monitor.id ? "selected" : ""} onClick={() => onPatch({ selectedMonitorId: monitor.id })}><Laptop size={17}/><span><strong>{monitor.name}</strong><small>{monitor.width} × {monitor.height}{monitor.primary ? " · 主屏幕" : ""}</small></span><i>{monitor.index + 1}</i></button>)}</div></>}
+        {section === "layout" && <div className="desktop-page-designer"><DesktopLayoutEditor monitor={activeMonitor} layout={settings.layouts[activeMonitor.id] ?? defaultDesktopLayout} settings={settings} onChange={next => onPatch({ layouts: { ...settings.layouts, [activeMonitor.id]: next } })}/><div className="range-heading"><span>计划卡片不透明度</span><strong>{Math.round(settings.opacity * 100)}%</strong></div><input className="range" type="range" min="0.35" max="1" step="0.01" value={settings.opacity} onChange={event => onPatch({ opacity: Number(event.target.value) })}/></div>}
       </section>}
-
-      {section === "principle" && (
-        <section className="settings-card settings-detail-card">
-          <div className="settings-card-heading"><Type size={18} /><div><h2>Principle</h2><p>作为一段完整文字展示，不参与完成度。</p></div></div>
-          <textarea className="settings-textarea principle-editor" rows={9} value={draft.principle} onChange={(event) => patch({ principle: event.target.value })} placeholder="写下做事时希望遵循的原则……" />
-          <small className="field-help">内容即时保存。换行会被保留，桌面壁纸会自动折行。</small>
-        </section>
-      )}
-
-      {section === "desktop" && (
-        <section className="settings-card settings-detail-card desktop-settings-card">
-          <div className={helper.connected ? "helper-card connected" : "helper-card"}>
-            <span className="helper-icon">{helper.connected ? <Check size={17} /> : <Unplug size={17} />}</span>
-            <span><strong>{helper.connected ? "桌面助手已连接" : "浏览器独立模式"}</strong><small>{helper.connected ? `版本 ${helper.version ?? "未知"} · ${helper.monitors.length} 块显示器` : "To-Do 可以独立使用；桌面壁纸需要本地助手。"}</small></span>
-            <button onClick={onRefreshHelper} aria-label="重新检测"><RefreshCw size={14} /></button>
-          </div>
-          {!helper.connected && (
-            <div className="release-download-card">
-              <span><Download size={17} /></span>
-              <div><strong>下载 Windows 桌面助手</strong><small>从 GitHub Releases 获取最新版助手和安装说明。</small></div>
-              <a href={releasesUrl} target="_blank" rel="noreferrer">打开 Release <ExternalLink size={13} /></a>
-            </div>
-          )}
-
-          <button className="toggle-row" disabled={!helper.connected} onClick={() => patch({ desktopEnabled: !draft.desktopEnabled })}>
-            <span className="setting-title"><Monitor size={17} /><span><strong>显示桌面计划</strong><small>生成壁纸，不覆盖普通应用</small></span></span>
-            <i className={draft.desktopEnabled ? "toggle active" : "toggle"}><b /></i>
-          </button>
-          <div className="segmented">
-            <button disabled={!helper.connected} className={draft.displayMode === "single" ? "active" : ""} onClick={() => patch({ displayMode: "single" })}>指定屏幕</button>
-            <button disabled={!helper.connected} className={draft.displayMode === "all" ? "active" : ""} onClick={() => patch({ displayMode: "all" })}>全部屏幕</button>
-          </div>
-          <div className="monitor-list">
-            {monitors.map((monitor) => (
-              <button type="button" key={monitor.id} disabled={!helper.connected} className={activeMonitor.id === monitor.id ? "selected" : ""} onClick={() => patch({ selectedMonitorId: monitor.id })}>
-                <Laptop size={17} /><span><strong>{monitor.name}</strong><small>{monitor.width} × {monitor.height}{monitor.primary ? " · 主屏幕" : ""}</small></span><i>{monitor.index + 1}</i>
-              </button>
-            ))}
-          </div>
-          <div className="desktop-page-designer">
-            <DesktopLayoutEditor monitor={activeMonitor} layout={layout} settings={draft} onChange={(next) => patch({ layouts: { ...draft.layouts, [activeMonitor.id]: next } })} />
-            <div className="range-heading"><span>计划卡片不透明度</span><strong>{Math.round(draft.opacity * 100)}%</strong></div>
-            <input className="range" type="range" min="0.35" max="1" step="0.01" value={draft.opacity} onChange={(event) => patch({ opacity: Number(event.target.value) })} />
-          </div>
-          <button className="restore-wallpaper" disabled={!helper.connected} onClick={onRestoreWallpaper}><RotateCcw size={15} />恢复启用前的原壁纸</button>
-          <p className="settings-footnote">任务保存在浏览器本地。本地助手只接收用于生成壁纸的快照。</p>
-        </section>
-      )}
-    </main>
-  );
+    </div></div>
+  </main>;
 }

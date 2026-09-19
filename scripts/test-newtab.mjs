@@ -201,13 +201,12 @@ try {
 
   console.log("PASS: navigation groups, ordering and cross-tab update.");
   await page.getByRole("button", { name: "设置", exact: true }).click();
-  await page.locator(".appearance-entry").click();
+  await page.getByRole("button", { name: "整体样式", exact: true }).click();
   const preview = page.frameLocator(".appearance-preview-frame");
   await preview.locator(".newtab-workspace").waitFor();
-  const settingsBeforePreview = await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2"));
   await page.getByRole("button", { name: "深色", exact: true }).click();
   await preview.locator(".app.theme-dark").waitFor();
-  assert.equal(await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2")), settingsBeforePreview, "theme draft does not write storage");
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.settings.v2")).theme === "dark");
   await page.getByRole("slider").first().press("End");
   await page.getByRole("slider", { name: "布局间距", exact: true }).press("End");
   await page.getByRole("button", { name: "竖屏", exact: true }).click();
@@ -219,22 +218,15 @@ try {
   await page.getByRole("button", { name: "侧边栏", exact: true }).click();
   await preview.locator(".sidepanel-plan").waitFor();
   assert.equal(await preview.locator(".shortcut-panel").count(), 0);
-  await page.getByRole("button", { name: "取消", exact: true }).click();
-  assert.equal(await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2")), settingsBeforePreview);
-  await page.locator(".appearance-entry").click();
-  await page.getByRole("button", { name: "深色", exact: true }).click();
-  await page.getByRole("button", { name: "保存", exact: true }).click();
-  await page.locator(".settings-hub").waitFor();
   await page.getByRole("button", { name: "返回", exact: true }).click();
   await page.locator(".app.theme-dark .newtab-workspace").waitFor();
   await page.screenshot({ path: fileURLToPath(new URL("dark.png", output)), fullPage: true });
   await page.getByRole("button", { name: "设置", exact: true }).click();
-  await page.locator(".appearance-entry").click();
+  await page.getByRole("button", { name: "整体样式", exact: true }).click();
   await page.getByRole("button", { name: "明亮", exact: true }).click();
   await preview.locator(".app.theme-light").waitFor();
   const lightSurface = await preview.locator(".todo-card").evaluate(el => getComputedStyle(el).backgroundColor);
   assert.ok(lightSurface.includes("255, 255, 255"), "dark editor does not override light preview");
-  await page.getByRole("button", { name: "取消", exact: true }).click();
   await page.getByRole("button", { name: "返回", exact: true }).click();
   await page.evaluate(() => {
     const settings = JSON.parse(localStorage.getItem("schedulepin.settings.v2"));
