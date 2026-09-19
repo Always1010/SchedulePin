@@ -1,7 +1,7 @@
-import { CalendarDays, ExternalLink, Image, LayoutPanelTop, Monitor, Palette, PanelRight, Type } from "lucide-react";
+import { ExternalLink, Image, LayoutPanelTop, Monitor, Palette, Type } from "lucide-react";
 import "./settings-navigation.css";
 
-export type SettingsSection = "style" | "background" | "shortcuts" | "tasks" | "principle" | "assistant" | "monitor" | "layout";
+export type SettingsSection = "style" | "background" | "shortcuts" | "tasks" | "principle" | "desktop";
 
 const browserSections: Array<{ id: SettingsSection; label: string; icon: typeof Palette }> = [
   { id: "style", label: "整体样式", icon: Palette },
@@ -11,9 +11,7 @@ const browserSections: Array<{ id: SettingsSection; label: string; icon: typeof 
   { id: "principle", label: "原则卡片", icon: Type },
 ];
 const desktopSections: Array<{ id: SettingsSection; label: string; icon: typeof Monitor }> = [
-  { id: "assistant", label: "桌面助手", icon: Monitor },
-  { id: "monitor", label: "显示器", icon: PanelRight },
-  { id: "layout", label: "计划布局", icon: CalendarDays },
+  { id: "desktop", label: "桌面展示", icon: Monitor },
 ];
 
 export function SettingsNavigation({ section, onSelect }: { section: SettingsSection; onSelect: (section: SettingsSection) => void }) {

@@ -258,3 +258,13 @@
 - 解决方案：新增带预期版本的窗口壁纸缓存事务，在同一个 IndexedDB 读写事务内确认偏好版本和 `open` 模式后再写入缓存；自动与手动换图都只在事务成功后更新窗口状态，版本过期时静默丢弃候选图。
 - 验证方式：TypeScript 检查、背景模型测试和真实 Edge IndexedDB 回归通过；存储回归模拟换图捕获旧版本后另一个窗口固定壁纸，确认过期候选图不会写入缓存。React 双窗口回归延迟真实图片响应，分别在另一窗口固定与恢复默认，等待下载后的存储事务完成后确认旧图片未应用或缓存；同时验证初始化不会清掉用于排除上一张图片的窗口记录。
 - 相关文件：`src/backgroundStore.ts`、`src/useBackground.ts`、`src/components/BackgroundToolbar.tsx`、`scripts/test-wallpaper-store.mjs`、`scripts/test-wallpaper-race.mjs`、`scripts/wallpaper-race-harness.tsx`
+
+## SP-027：桌面显示器与计划布局被拆到不同设置页
+
+- 日期：2026-09-19
+- 状态：已解决
+- 现象或修改背景：桌面助手、显示器和计划布局被拆成三个入口；在计划布局页无法切换要编辑的显示器，用户需要来回切换页面，且“全部屏幕”下不容易理解每块屏幕仍有独立布局。
+- 原因分析：设置结构按实现模块拆分，而显示器选择本身是布局编辑的必要上下文，拆开后中断了“选择范围—选择屏幕—编辑布局”的连续操作。
+- 解决方案：合并为单一“桌面展示”入口，在同一页面依次显示助手状态、启用开关、显示范围、显示器列表和当前显示器的布局编辑器；全部屏幕模式明确提示每块屏幕分别保存布局。
+- 验证方式：TypeScript 与设置浏览器回归通过；设置导航仅保留一个桌面展示入口，显示范围、显示器选择和当前显示器布局同时可见。
+- 相关文件：`src/components/SettingsNavigation.tsx`、`src/components/SettingsPage.tsx`、`src/components/settings-navigation.css`、`scripts/test-settings-ui.mjs`

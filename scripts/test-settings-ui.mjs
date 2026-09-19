@@ -16,7 +16,11 @@ try {
   const page = await context.newPage();
   await page.goto(base); await page.getByRole("button", { name: "设置", exact: true }).click();
   await page.getByRole("navigation", { name: "设置分类" }).waitFor();
-  for (const label of ["整体样式", "页面背景", "快捷导航", "待办区域", "原则卡片", "桌面助手", "显示器", "计划布局"]) assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, `${label} has one entry`);
+  for (const label of ["整体样式", "页面背景", "快捷导航", "待办区域", "原则卡片", "桌面展示"]) assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, `${label} has one entry`);
+  for (const label of ["桌面助手", "显示器", "计划布局"]) assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 0, `${label} is not a separate page`);
+  await page.getByRole("button", { name: "桌面展示", exact: true }).click();
+  await page.getByText("显示范围与布局", { exact: true }).waitFor();
+  assert.equal(await page.getByText("显示器预览 的计划布局", { exact: true }).count(), 1, "monitor selection and layout share one page");
   assert.equal(await page.getByText("展开完整待办", { exact: true }).count(), 0, "task visibility is not mixed into shortcuts");
   await page.getByRole("button", { name: "待办区域", exact: true }).click(); await page.getByText("展开完整待办", { exact: true }).waitFor();
   await page.getByRole("button", { name: "原则卡片", exact: true }).click();
