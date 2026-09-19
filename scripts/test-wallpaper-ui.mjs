@@ -8,6 +8,56 @@ const browser=await chromium.launch({headless:true,...(process.env.SCHEDULEPIN_B
 const image=await readFile(new URL("../public/icons/128x128.png",import.meta.url));
 const output=new URL("../.tools/wallpaper-tests/",import.meta.url);await mkdir(output,{recursive:true});
 try {
+  // A fresh installation must support choosing photo style before uploading anything.
+  const fresh=await browser.newContext({viewport:{width:1280,height:720}});
+  const first=await fresh.newPage();let unavailable=false,photoRequests=0;
+  let releasePhoto;const photoGate=new Promise(resolve=>{releasePhoto=resolve;});
+  await fresh.route("https://commons.wikimedia.org/w/api.php*",async route=>{
+    photoRequests++;await photoGate;
+    return unavailable?route.abort():route.fulfill({json:{query:{pages:{321:{pageid:321,title:"File:首次风景.jpg",imageinfo:[{mime:"image/jpeg",width:2000,thumburl:"https://thumb.wikimedia.org/first-wallpaper.jpg",descriptionurl:"https://commons.wikimedia.org/wiki/File:First.jpg",extmetadata:{Artist:{value:"测试作者"},LicenseShortName:{value:"CC BY 4.0"},LicenseUrl:{value:"https://creativecommons.org/licenses/by/4.0/"}}}]}}}}});
+  });
+  await fresh.route("https://thumb.wikimedia.org/first-wallpaper.jpg",route=>route.fulfill({contentType:"image/png",body:image}));
+  await first.goto(base);await first.getByRole("button",{name:"壁纸库",exact:true}).click();
+  await first.getByRole("button",{name:"风景沉浸",exact:true}).click();
+  await first.getByRole("status").filter({hasText:"正在准备壁纸"}).waitFor();
+  assert.equal(await first.getByRole("button",{name:"处理中…",exact:true}).isDisabled(),true);
+  releasePhoto();
+  await first.frameLocator(".appearance-preview-frame").locator(".background-layer img").waitFor();
+  assert.equal(await first.getByRole("button",{name:"保存背景",exact:true}).isEnabled(),true);
+  await first.locator(".wallpaper-page").evaluate(el=>{el.scrollTop=el.scrollHeight;});
+  assert.ok(await first.getByRole("button",{name:"保存背景",exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),"save remains visible and clickable after scrolling");
+  await first.screenshot({path:fileURLToPath(new URL("photo-save-sticky.png",output))});
+  await first.getByRole("button",{name:"取消",exact:true}).click();await first.locator(".app.background-paper").waitFor();
+  await first.reload();await first.locator(".app.background-paper").waitFor();
+  await first.getByRole("button",{name:"壁纸库",exact:true}).click();await first.getByRole("button",{name:"风景沉浸",exact:true}).click();
+  await first.frameLocator(".appearance-preview-frame").locator(".background-layer img").waitFor();
+  await first.getByRole("button",{name:"保存背景",exact:true}).click();await first.locator('.app.background-photo .background-layer[data-wallpaper-id="commons-321"] img').waitFor();
+  await first.reload();await first.locator('.app.background-photo .background-layer[data-wallpaper-id="commons-321"] img').waitFor();
+  // A saved image is reused even when the online service is unavailable.
+  await first.getByRole("button",{name:"壁纸库",exact:true}).click();await first.getByRole("button",{name:"清爽纸感",exact:true}).click();await first.getByRole("button",{name:"保存背景",exact:true}).click();
+  const cachedRequests=photoRequests;unavailable=true;
+  await first.getByRole("button",{name:"壁纸库",exact:true}).click();await first.getByRole("button",{name:"风景沉浸",exact:true}).click();
+  await first.frameLocator(".appearance-preview-frame").locator(".background-layer img").waitFor();
+  assert.equal(photoRequests,cachedRequests,"photo style reuses the existing image without a network request");
+  await fresh.close();
+
+  const failure=await browser.newContext({viewport:{width:320,height:750}});const failed=await failure.newPage();
+  await failure.route("https://commons.wikimedia.org/w/api.php*",route=>route.abort());
+  await failed.goto(base);await failed.getByRole("button",{name:"壁纸库",exact:true}).click();await failed.getByRole("button",{name:"风景沉浸",exact:true}).click();
+  await failed.getByRole("alert").filter({hasText:"壁纸未能加载"}).waitFor();
+  assert.equal(await failed.getByRole("button",{name:"保存背景",exact:true}).isEnabled(),true,"failed downloads never leave save silently disabled");
+  assert.equal(await failed.getByRole("slider",{name:"壁纸水平位置",exact:true}).count(),0,"crop controls require an image");
+  await failed.getByRole("button",{name:"保存背景",exact:true}).click();await failed.getByRole("alert").filter({hasText:"壁纸未能加载"}).waitFor();
+  await failed.getByRole("button",{name:"重新加载壁纸",exact:true}).click();await failed.getByRole("alert").filter({hasText:"壁纸未能加载"}).waitFor();
+  assert.equal(await failed.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await failed.screenshot({path:fileURLToPath(new URL("photo-load-error.png",output))});
+  await failed.getByRole("button",{name:"使用本地图片",exact:true}).click();
+  await failed.locator('input[accept="image/jpeg,image/png,image/webp"]').setInputFiles({name:"离线恢复.png",mimeType:"image/png",buffer:image});
+  await failed.getByRole("button",{name:"预览 离线恢复.png",exact:true}).waitFor();
+  await failed.getByRole("button",{name:"保存背景",exact:true}).click();await failed.locator(".app.background-photo .background-layer img").waitFor();
+  await failed.reload();await failed.locator(".app.background-photo .background-layer img").waitFor();
+  await failure.close();
+  console.log("PASS: first-use photo preparation, loading feedback, sticky save, cancel, save/reload, cached reuse and network-failure upload recovery.");
   const context=await browser.newContext({viewport:{width:1440,height:1100}});const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));
   const state=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const open=indexedDB.open("schedulepin.background.v1",1);open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result;const tx=db.transaction(["preferences","wallpapers"]);const p=tx.objectStore("preferences").get("current"),w=tx.objectStore("wallpapers").getAll();tx.oncomplete=()=>{resolve({preferences:p.result,wallpapers:w.result.map(i=>({...i,blobSize:i.blob.size,blob:undefined,thumbnail:undefined}))});db.close();};};}));
   await page.goto(base);await page.getByRole("button",{name:"壁纸库",exact:true}).waitFor();
