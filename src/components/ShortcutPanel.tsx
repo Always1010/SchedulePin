@@ -37,7 +37,7 @@ function ShortcutEditor({ editor, groups, onSave, onClose }: {
       <label>名称<input autoFocus required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
       {editor.kind === "link" && <>
         <label>网址<input required value={url} onChange={event => setUrl(event.target.value)} placeholder="https://example.com" inputMode="url" /></label>
-        <label>分组<select value={groupId} onChange={event => setGroupId(event.target.value)}><option value="">未分组</option>{groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
+        <label>分组<select aria-label="分组" value={groupId} onChange={event => setGroupId(event.target.value)}><option value="">未分组</option>{groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
         <label className="shortcut-checkbox"><input type="checkbox" checked={pinned} onChange={event => setPinned(event.target.checked)} />固定到常用入口</label>
       </>}
       {error && <p role="alert" className="shortcut-error">{error}</p>}

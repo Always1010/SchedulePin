@@ -1,0 +1,11 @@
+.appearance-preview-host { width: 100%; min-width: 0; }
+.appearance-preview-viewport { position: relative; margin: 0 auto; overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+.appearance-preview-frame { display: block; border: 0; transform-origin: top left; }
+.appearance-preview-caption { margin: 12px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+.appearance-editor-page .appearance-preview-area { align-self: start; }
+.appearance-editor-page .preview-toolbar { flex-wrap: wrap; gap: 8px; }
+.appearance-editor-page .preview-mode-switch { flex-wrap: wrap; }
+@media (min-width: 621px) and (max-width: 1000px) {
+  .appearance-editor-page .appearance-workspace { grid-template-columns: 1fr; }
+  .appearance-editor-page .appearance-preview-area { order: -1; }
+}

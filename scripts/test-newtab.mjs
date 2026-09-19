@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
-import { createServer } from "vite";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { build, preview } from "vite";
 
 // Use a normal Playwright installation, or an existing desktop runtime without copying its files.
 const { chromium } = await import(process.env.SCHEDULEPIN_PLAYWRIGHT_PATH
   ? pathToFileURL(process.env.SCHEDULEPIN_PLAYWRIGHT_PATH).href : "playwright");
-const server = await createServer({ server: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
-await server.listen();
+await build({ logLevel: "error" });
+const server = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
 const address = server.httpServer.address();
 const base = `http://127.0.0.1:${address.port}`;
 const browser = await chromium.launch({ headless: true,
@@ -20,7 +20,8 @@ try {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(base);
+  await page.goto(base, { waitUntil: "domcontentloaded", timeout: 60000 });
+  console.log("Loaded isolated app.");
   await page.getByRole("button", { name: "添加入口", exact: true }).waitFor();
   assert.equal(await page.locator(".shortcut-row").count(), 0, "fresh install has no invented links");
   await page.getByRole("button", { name: "添加入口", exact: true }).click();
@@ -59,9 +60,9 @@ try {
     assert.equal(await page.locator(".task-row").count(), 35, "all tasks rendered");
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.screenshot({ path: new URL("landscape.png", output).pathname.replace(/^\/(\w:)/, "$1"), fullPage: true });
+  await page.screenshot({ path: fileURLToPath(new URL("landscape.png", output)), fullPage: true });
   await page.setViewportSize({ width: 1080, height: 1500 });
-  await page.screenshot({ path: new URL("portrait.png", output).pathname.replace(/^\/(\w:)/, "$1"), fullPage: true });
+  await page.screenshot({ path: fileURLToPath(new URL("portrait.png", output)), fullPage: true });
   await page.setViewportSize({ width: 864, height: 800 });
   await page.locator(".newtab-plan-region").evaluate(el => { el.scrollTop = 500; });
   assert.equal(await page.locator(".newtab-navigation").evaluate(el => el.scrollTop), 0, "plan scrolling does not scroll navigation");
@@ -84,6 +85,17 @@ try {
   await page.getByRole("button", { name: "收起 Principle", exact: true }).click();
   await page.reload(); await page.getByRole("button", { name: "展开 Principle", exact: true }).waitFor();
   await page.getByRole("button", { name: "展开 Principle", exact: true }).click();
+  const handle = page.getByRole("button", { name: "拖动 待办任务 2 调整顺序", exact: true });
+  await handle.focus(); await handle.press("Space");
+  await page.locator('[data-task-id="qa-1"].dragging').waitFor();
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await handle.press("ArrowDown");
+  await page.waitForFunction(() => [...document.querySelectorAll('[aria-live]')].some(el => el.textContent.includes("over droppable area qa-2")));
+  await handle.press("Space");
+  await page.waitForFunction(() => {
+    const tasks = JSON.parse(localStorage.getItem("schedulepin.items.v2"));
+    return tasks.find(row => row.id === "qa-1").sortOrder === 2;
+  });
   const row = page.locator('[data-task-id="qa-0"]');
   await row.getByRole("button", { name: "标记为完成", exact: true }).click();
   await row.getByRole("button", { name: "标记为未完成", exact: true }).waitFor();
@@ -95,6 +107,88 @@ try {
   await input.fill("新增待办验证"); await input.press("Enter");
   await page.getByRole("button", { name: "新增待办验证", exact: true }).waitFor();
   assert.equal(await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2")), oldSettings, "layout and navigation preserve theme settings");
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  console.log("PASS: layout, task editing and keyboard reorder.");
+  await page.getByRole("button", { name: "整理", exact: true }).click();
+  await page.getByRole("button", { name: "编辑 网站入口 1", exact: true }).click();
+  await page.getByLabel("名称", { exact: true }).fill("办公文档");
+  await page.getByLabel("分组", { exact: true }).selectOption("work");
+  await page.getByLabel("固定到常用入口", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "重命名分组 工作", exact: true }).click();
+  await page.getByLabel("名称", { exact: true }).fill("办公");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "删除分组 办公，保留链接", exact: true }).click();
+  await page.getByRole("button", { name: "编辑 办公文档", exact: true }).waitFor();
+  const storedLink = await page.evaluate(() => JSON.parse(localStorage.getItem("schedulepin.navigation.v1")).links.find(row => row.id === "link-0"));
+  assert.equal(storedLink.groupId, null); assert.equal(storedLink.pinned, false);
+  await page.getByRole("button", { name: "下移 网站入口 2", exact: true }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.navigation.v1")).links[1].id === "link-2");
+  await page.getByRole("button", { name: "完成", exact: true }).click();
+  await page.getByRole("textbox", { name: "查找网站入口", exact: true }).fill("办公");
+  assert.equal(await page.locator(".shortcut-row").count(), 1);
+  await page.getByRole("button", { name: "清除查找", exact: true }).click();
+  const other = await context.newPage(); await other.goto(base); await other.locator(".shortcut-row").first().waitFor();
+  await page.getByRole("button", { name: "整理", exact: true }).click();
+  await page.getByRole("button", { name: "删除 网站入口 3", exact: true }).click();
+  await other.locator('.shortcut-row a[href="https://example.com/2"]').waitFor({ state: "detached" });
+  await other.close();
+  await page.getByRole("button", { name: "完成", exact: true }).click();
+
+  console.log("PASS: navigation groups, ordering and cross-tab update.");
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.locator(".appearance-entry").click();
+  const preview = page.frameLocator(".appearance-preview-frame");
+  await preview.locator(".newtab-workspace").waitFor();
+  const settingsBeforePreview = await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2"));
+  await page.getByRole("button", { name: "深色", exact: true }).click();
+  await preview.locator(".app.theme-dark").waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2")), settingsBeforePreview, "theme draft does not write storage");
+  await page.getByRole("slider").first().press("End");
+  await page.getByRole("slider", { name: "布局间距", exact: true }).press("End");
+  await page.getByRole("button", { name: "竖屏", exact: true }).click();
+  assert.equal(await preview.locator(".newtab-workspace").count(), 1);
+  const previewColumns = await preview.locator(".newtab-workspace").evaluate(el => getComputedStyle(el).gridTemplateColumns);
+  assert.ok(previewColumns.split(" ").length === 2);
+  assert.equal(await preview.locator(".app").evaluate(el => el.style.getPropertyValue("--font-scale")), "1.25");
+  await page.screenshot({ path: fileURLToPath(new URL("appearance-portrait.png", output)), fullPage: true });
+  await page.getByRole("button", { name: "侧边栏", exact: true }).click();
+  await preview.locator(".sidepanel-plan").waitFor();
+  assert.equal(await preview.locator(".shortcut-panel").count(), 0);
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  assert.equal(await page.evaluate(() => localStorage.getItem("schedulepin.settings.v2")), settingsBeforePreview);
+  await page.locator(".appearance-entry").click();
+  await page.getByRole("button", { name: "深色", exact: true }).click();
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".settings-hub").waitFor();
+  await page.getByRole("button", { name: "返回", exact: true }).click();
+  await page.locator(".app.theme-dark .newtab-workspace").waitFor();
+  await page.screenshot({ path: fileURLToPath(new URL("dark.png", output)), fullPage: true });
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  await page.locator(".appearance-entry").click();
+  await page.getByRole("button", { name: "明亮", exact: true }).click();
+  await preview.locator(".app.theme-light").waitFor();
+  const lightSurface = await preview.locator(".todo-card").evaluate(el => getComputedStyle(el).backgroundColor);
+  assert.ok(lightSurface.includes("255, 255, 255"), "dark editor does not override light preview");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await page.getByRole("button", { name: "返回", exact: true }).click();
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem("schedulepin.settings.v2"));
+    localStorage.setItem("schedulepin.settings.v2", JSON.stringify({ ...settings, theme: "system", fontScale: 1.25, densityLevel: 100 }));
+  });
+  await page.emulateMedia({ colorScheme: "dark" }); await page.reload();
+  await page.locator(".newtab-workspace").waitFor();
+  const systemColor = await page.locator(".shortcut-panel").evaluate(el => getComputedStyle(el).color);
+  assert.equal(systemColor, "rgb(238, 242, 239)");
+  await page.setViewportSize({ width: 864, height: 1536 }); await beside();
+  await page.setViewportSize({ width: 320, height: 700 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.deepEqual(errors, []);
-  console.log("PASS: URL editing, old settings, all tasks, six desktop sizes, independent scroll, preferences, side panel, task rename/archive/add.");
+  console.log("PASS: navigation editing/groups/order/cross-tab sync, three shared previews, draft cancel/save, dark/light/system themes, large text and compact fallback.");
+} catch (error) {
+  const page = browser.contexts()[0]?.pages()[0];
+  if (page) await page.screenshot({ path: fileURLToPath(new URL("failure.png", output)), fullPage: true }).catch(() => {});
+  throw error;
 } finally { await browser.close(); await server.close(); }

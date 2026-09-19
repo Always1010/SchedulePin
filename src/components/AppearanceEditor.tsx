@@ -1,12 +1,16 @@
-import { AlignJustify, ArrowLeft, Check, Monitor, RotateCcw, Save, Sidebar, Type } from "lucide-react";
+import { AlignJustify, ArrowLeft, Check, Monitor, RectangleVertical, RotateCcw, Save, Sidebar, Type } from "lucide-react";
 import { useMemo, useState } from "react";
 import { defaultSettings } from "../data";
 import type { AppSettings, PlanItem } from "../types";
-import { visualDesignStyle } from "../visualDesign";
+import { AppearancePreview, type PreviewMode } from "./AppearancePreview";
+import type { NavigationData, NewTabPreferences } from "../navigation";
+import "./appearance-preview.css";
 
 interface Props {
   settings: AppSettings;
   items: PlanItem[];
+  navigation: NavigationData;
+  preferences: NewTabPreferences;
   onSave: (settings: AppSettings) => Promise<void>;
   onCancel: () => void;
 }
@@ -32,19 +36,15 @@ const principleThemes: Array<{ value: AppSettings["principleTheme"]; label: stri
   { value: "sunset", label: "落日", color: "linear-gradient(135deg,#784038,#ad6751)" },
 ];
 
-const dateLabel = () => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date());
 
-export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
+export function AppearanceEditor({ settings, items, navigation, preferences, onSave, onCancel }: Props) {
   const [draft, setDraft] = useState(settings);
-  const [mode, setMode] = useState<"newtab" | "sidepanel">("newtab");
+  const [mode, setMode] = useState<PreviewMode>("newtab");
   const [saving, setSaving] = useState(false);
   const tasks = useMemo(() => items
     .filter((item) => item.kind === "task")
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt))
-    .slice(0, 5), [items]);
-  const completed = tasks.filter((item) => item.completed).length;
-  const progress = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-  const appearanceClass = `theme-${draft.theme} font-${draft.fontFamily} principle-theme-${draft.principleTheme} principle-font-${draft.principleFontFamily} principle-style-${draft.principleTextStyle}`;
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt)), [items]);
+  const [error, setError] = useState("");
 
   const resetAppearance = () => setDraft((current) => ({
     ...current,
@@ -62,25 +62,28 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
 
   const save = async () => {
     setSaving(true);
-    await onSave(draft);
-    setSaving(false);
+    setError("");
+    try { await onSave(draft); }
+    catch { setError("外观保存失败，草稿已保留，请重试。"); }
+    finally { setSaving(false); }
   };
 
   return (
     <main className="appearance-editor-page">
       <header className="appearance-editor-header">
-        <button type="button" className="back-button" onClick={onCancel}><ArrowLeft size={17} />取消</button>
-        <div><span className="eyebrow">Live preview</span><h1>外观</h1><p>左侧调整，右侧即时查看真实页面效果。</p></div>
+        <button type="button" className="back-button" disabled={saving} onClick={onCancel}><ArrowLeft size={17} />取消</button>
+        <div><span className="eyebrow">Live preview</span><h1>外观</h1><p>调整主题与排版，预览横屏、竖屏和侧边栏。</p></div>
         <div className="appearance-editor-actions">
-          <button type="button" className="reset-appearance" onClick={resetAppearance}><RotateCcw size={15} />恢复默认</button>
+          <button type="button" className="reset-appearance" disabled={saving} onClick={resetAppearance}><RotateCcw size={15} />恢复默认</button>
           <button type="button" className="save-appearance" disabled={saving} onClick={save}><Save size={15} />{saving ? "保存中…" : "保存"}</button>
         </div>
       </header>
 
+      {error && <p role="alert" className="shortcut-error">{error}</p>}
       <div className="appearance-workspace">
         <aside className="appearance-controls">
           <section className="appearance-control-section">
-            <div className="appearance-control-heading"><span>整体外观</span><small>页面与 To-Do</small></div>
+            <div className="appearance-control-heading"><span>整体外观</span><small>导航与计划区域</small></div>
             <label className="settings-control-label">页面主题</label>
             <div className="theme-options">
               {themes.map((theme) => (
@@ -153,35 +156,13 @@ export function AppearanceEditor({ settings, items, onSave, onCancel }: Props) {
           <div className="preview-toolbar">
             <strong>实时预览</strong>
             <div className="preview-mode-switch">
-              <button type="button" className={mode === "newtab" ? "active" : ""} onClick={() => setMode("newtab")}><Monitor size={14} />新标签页</button>
+              <button type="button" className={mode === "newtab" ? "active" : ""} onClick={() => setMode("newtab")}><Monitor size={14} />横屏</button>
+              <button type="button" className={mode === "portrait" ? "active" : ""} onClick={() => setMode("portrait")}><RectangleVertical size={14} />竖屏</button>
               <button type="button" className={mode === "sidepanel" ? "active" : ""} onClick={() => setMode("sidepanel")}><Sidebar size={14} />侧边栏</button>
             </div>
           </div>
 
-          <div className={mode === "sidepanel" ? "preview-stage sidepanel-stage" : "preview-stage"}>
-            <div
-              className={`appearance-live-preview ${appearanceClass}${mode === "sidepanel" ? " compact-preview" : ""}`}
-              style={{ ...visualDesignStyle(draft), "--font-scale": draft.fontScale, "--principle-font-scale": draft.principleFontScale, "--card-radius": `${draft.cardRadius}px` } as React.CSSProperties}
-            >
-              <div className="preview-appbar"><span className="preview-logo">✓</span><strong>SchedulePin</strong><small>{mode === "sidepanel" ? "浏览器侧边栏" : "To-Do · 新标签页"}</small></div>
-              <div className="preview-page-content">
-                <section className="preview-day">
-                  <div><span>今天</span><h2>{dateLabel()}</h2></div>
-                  <strong>{progress}%<small>{completed}/{tasks.length}</small></strong>
-                </section>
-                <section className="preview-principle"><small>HOW I WORK</small><h3>Principle</h3><p>{draft.principle || "在设置中写下希望长期遵循的做事原则。"}</p></section>
-                <section className="preview-todos">
-                  <div><h3>To-Do List</h3><small>按添加顺序排列</small></div>
-                  {tasks.length ? tasks.map((item) => (
-                    <article className={item.completed ? "completed" : ""} key={item.id}>
-                      <i>⋮⋮</i><b>{item.completed ? "✓" : ""}</b><span>{item.title}<small>{item.startTime ? `${item.startTime}${item.endTime ? ` — ${item.endTime}` : ""}` : ""}</small></span>
-                    </article>
-                  )) : <p className="preview-empty">现在没有待办事项</p>}
-                  <div className="preview-input">＋ 输入要做的事，按 Enter 添加…</div>
-                </section>
-              </div>
-            </div>
-          </div>
+          <AppearancePreview settings={draft} tasks={tasks} navigation={navigation} preferences={preferences} mode={mode} />
         </section>
       </div>
     </main>

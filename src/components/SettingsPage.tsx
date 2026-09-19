@@ -87,7 +87,7 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
 
       {section === "shortcuts" && <section className="settings-card shortcut-settings">
         <div className="shortcut-settings-options">
-          <label>导航位置<select value={preferences.side} disabled={!navigationReady} onChange={event => void changePreferences({ side: event.target.value as "left" | "right" })}><option value="left">左侧</option><option value="right">右侧</option></select></label>
+          <label>导航位置<select aria-label="导航位置" value={preferences.side} disabled={!navigationReady} onChange={event => void changePreferences({ side: event.target.value as "left" | "right" })}><option value="left">左侧</option><option value="right">右侧</option></select></label>
           <label><input type="checkbox" checked={preferences.showDomains} disabled={!navigationReady} onChange={event => void changePreferences({ showDomains: event.target.checked })} />显示域名</label>
           <label><input type="checkbox" checked={preferences.tasksVisible} disabled={!navigationReady} onChange={event => void changePreferences({ tasksVisible: event.target.checked })} />展开完整待办</label>
         </div>

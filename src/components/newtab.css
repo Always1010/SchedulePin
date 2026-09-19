@@ -12,8 +12,8 @@
 .plan-view .todo-heading { gap: 12px; flex-wrap: wrap; }
 .plan-view .task-title-button { white-space: normal; overflow-wrap: anywhere; text-align: left; line-height: 1.65; }
 .plan-view .task-title-input { color: var(--ink); background: var(--paper); }
-.plan-view .principle-collapsed { padding-top: 12px; padding-bottom: 12px; }
-.plan-view .principle-collapsed .principle-heading { margin-bottom: 0; }
+.principle-spotlight.principle-collapsed { padding-top: 12px; padding-bottom: 12px; }
+.principle-collapsed .principle-heading { margin-bottom: 0; }
 .principle-collapse-button { display: grid; place-items: center; }
 .principle-collapsed .principle-collapse-button svg { transform: rotate(-90deg); }
 .newtab-quiet { max-width: 700px; margin: 7cqh auto 0; color: var(--ink); }

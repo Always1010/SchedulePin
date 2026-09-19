@@ -176,6 +176,8 @@ export default function App() {
         <AppearanceEditor
           settings={settings}
           items={items}
+          navigation={navigation}
+          preferences={preferences}
           onSave={saveAppearance}
           onCancel={() => setPage("settings")}
         />
