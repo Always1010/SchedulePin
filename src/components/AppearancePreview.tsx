@@ -8,6 +8,7 @@ import { NewTabLayout } from "./NewTabLayout";
 import { PlanView, PrincipleCard } from "./PlanView";
 import type { BackgroundPreferences, Wallpaper } from "../backgroundModel";
 import { BackgroundLayer, backgroundClass, backgroundSettings, backgroundStyle } from "./BackgroundLayer";
+import "./appearance-preview.css";
 
 export type PreviewMode = "newtab" | "portrait" | "sidepanel";
 const sizes = { newtab: { width: 1280, height: 900 }, portrait: { width: 900, height: 1400 }, sidepanel: { width: 360, height: 850 } };

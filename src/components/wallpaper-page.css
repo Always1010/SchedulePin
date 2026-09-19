@@ -10,7 +10,7 @@
 .wallpaper-page .wallpaper-save { background: var(--ink); color: var(--paper); white-space: nowrap; }
 .wallpaper-workspace { display: grid; grid-template-columns: minmax(300px,400px) minmax(0,1fr); gap: 24px; align-items: start; max-width: 1550px; margin: auto; }
 .wallpaper-controls { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0; }
-.wallpaper-tabs { display: flex; gap: 4px; margin-bottom: 18px; }.wallpaper-tabs button { flex: 1; padding: 9px 5px; font-size: 13px; }
+.wallpaper-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; margin-bottom: 18px; }.wallpaper-tabs button { padding: 9px 5px; font-size: 13px; }
 .wallpaper-controls fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .wallpaper-controls label { display: grid; gap: 8px; margin: 18px 0; font-size: 13px; }
 .wallpaper-controls select { width: 100%; min-width: 0; padding: 9px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; }
@@ -28,3 +28,12 @@
 .wallpaper-preview { min-width: 0; position: sticky; top: 0; }.wallpaper-preview-modes { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }.wallpaper-attribution { padding: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; font-size: 12px; overflow-wrap: anywhere; }.wallpaper-attribution strong,.wallpaper-attribution span { width: 100%; }.wallpaper-attribution a { color: var(--ink); }.wallpaper-feedback { background: var(--surface); border-left: 3px solid var(--design-accent); padding: 12px; font-size: 13px; }
 @media(max-width:900px) { .wallpaper-workspace { grid-template-columns: 1fr; }.wallpaper-preview { position: static; }.wallpaper-page-heading { flex-wrap: wrap; }.wallpaper-page-heading h1 { font-size: 21px; } }
 @media(max-width:600px) { .wallpaper-page-heading { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.wallpaper-page-heading>div { grid-column: 1 / -1; grid-row: 1; }.wallpaper-page-heading>button { justify-self: start; }.wallpaper-page-heading>.wallpaper-save { justify-self: end; } }
+.wallpaper-embedded { padding: 0; overflow: visible; }
+.wallpaper-embedded .wallpaper-page-topbar { position: static; margin: 0 0 18px; padding: 0 0 16px; background: transparent; }
+.wallpaper-save-status { margin: 0; color: var(--muted); font-size: 12px; }
+.wallpaper-section-title { font-size: 14px; margin: 24px 0 0; }
+.wallpaper-embedded .wallpaper-workspace { grid-template-columns: minmax(260px,360px) minmax(0,1fr); }
+.wallpaper-embedded .wallpaper-preview { top: 18px; }
+.wallpaper-feedback button { margin-left: 12px; }
+@media(max-width:1150px) { .wallpaper-embedded .wallpaper-workspace { grid-template-columns: 1fr; }.wallpaper-embedded .wallpaper-preview { position: static; } }
+@media(max-width:600px) { .wallpaper-embedded .wallpaper-page-heading { display: flex; flex-wrap: wrap; }.wallpaper-controls { padding: 12px; } }

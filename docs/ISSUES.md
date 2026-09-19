@@ -239,6 +239,16 @@
 - 验证方式：TypeScript 检查和壁纸浏览器回归通过；测试覆盖新建窗口、单窗口手动换图和单窗口刷新均不改变其他窗口，也不修改全局 `currentId`，同时确认刷新后当前窗口会排除上一张图片。
 - 相关文件：`src/useBackground.ts`、`src/backgroundStore.ts`、`src/components/BackgroundToolbar.tsx`、`src/components/WallpaperPage.tsx`、`src/App.tsx`、`scripts/test-wallpaper-ui.mjs`
 
+## SP-025：自动换图缓存混入我的壁纸
+
+- 日期：2026-09-19
+- 状态：已解决
+- 现象或修改背景：每次打开或刷新自动下载的图片，以及仅使用但未收藏的在线图片，都会出现在“我的壁纸”，用户无法区分主动保留与临时缓存。
+- 原因分析：图库直接渲染 IndexedDB 中所有图片；同一存储同时承担显示缓存和个人图库，没有在展示层按保留意图筛选。
+- 解决方案：图库统一使用主动保留规则，只显示收藏、固定、上传或导入的图片；当前未收藏图片仍可显示、离线读取并随时收藏。固定同时持久保留，解除固定不移除图片；自动缓存继续受数量限制。背景界面接入即时保存、明确的使用／收藏／固定操作及局部默认恢复。
+- 验证方式：壁纸浏览器回归通过，覆盖首次下载不进入图库、仅使用不收藏、收藏与取消收藏、固定后刷新、解除固定后保留、导入导出与恢复默认不清图库；自动和手动轮换不增加主动保留数量，跨标签页保持独立。
+- 相关文件：`src/components/WallpaperPage.tsx`、`src/components/wallpaper-page.css`、`src/backgroundModel.ts`、`src/backgroundStore.ts`、`src/backgroundBackup.ts`、`src/components/BackgroundToolbar.tsx`、`scripts/test-wallpaper-ui.mjs`
+
 ## SP-026：延迟换图会覆盖同时发生的固定或背景重置
 
 - 日期：2026-09-19
