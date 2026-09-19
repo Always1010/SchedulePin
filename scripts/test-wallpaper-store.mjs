@@ -3,8 +3,8 @@ import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { createServer } from "vite";
 
-const playwrightPath=process.env.SCHEDULEPIN_PLAYWRIGHT_PATH??"C:/Users/always$$$/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright-core/index.mjs";
-const {chromium}=await import(pathToFileURL(playwrightPath).href);
+const playwrightPath=process.env.SCHEDULEPIN_PLAYWRIGHT_PATH;
+const {chromium}=await import(playwrightPath?pathToFileURL(playwrightPath).href:"playwright");
 const server=await createServer({
   server:{host:"127.0.0.1",port:0},logLevel:"error",
   optimizeDeps:{noDiscovery:true},
@@ -93,7 +93,6 @@ test("恢复默认只重置背景域并保留壁纸库",()=>{
   assert.ok(result.libraryIds.includes("pin"));assert.ok(result.libraryIds.includes("recovered"));assert.ok(result.libraryIds.includes("retained"));assert.ok(result.libraryIds.includes("legacy-fixed"));assert.ok(result.libraryIds.includes("imported"));
 });
 
-await Promise.race([browser.close(),new Promise(resolve=>setTimeout(resolve,2000))]);
+await browser.close();
 server.httpServer.closeAllConnections?.();
-await Promise.race([server.close(),new Promise(resolve=>setTimeout(resolve,2000))]);
-process.exit(0);
+await server.close();
