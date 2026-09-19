@@ -9,6 +9,9 @@
 .settings-content { min-width: 0; }
 .settings-content > .settings-card + .settings-card { margin-top: 18px; }
 .settings-content label { display: grid; gap: 7px; margin: 15px 0; color: var(--muted); font-size: 11px; }
+.settings-content label.toggle-row { display: flex; color: var(--ink); }
+.settings-content .settings-control-label { display: flex; align-items: center; }
+.settings-content .toggle-row:has(input:focus-visible) { outline: 2px solid var(--design-accent); outline-offset: 3px; border-radius: 8px; }
 .settings-content select { min-height: 34px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: color-mix(in srgb, var(--surface) 90%, transparent); }
 .settings-content .range { height: 5px; accent-color: var(--design-accent); }
 .settings-status { margin: 0 0 14px; color: var(--muted); font-size: 11px; }

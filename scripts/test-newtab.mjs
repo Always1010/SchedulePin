@@ -270,7 +270,7 @@ try {
   await page.getByLabel("网址", { exact: true }).fill("https://www.example.com/article/1");
   await page.screenshot({ path: fileURLToPath(new URL("entry-editor.png", output)), fullPage: true });
   assert.deepEqual(errors, []);
-  console.log("PASS: navigation editing/groups/order/cross-tab sync, three shared previews, draft cancel/save, dark/light/system themes, large text and compact fallback.");
+  console.log("PASS: navigation editing/groups/order/cross-tab sync, three shared previews, immediate appearance persistence, dark/light/system themes, large text and compact fallback.");
 } catch (error) {
   const page = browser.contexts()[0]?.pages()[0];
   if (page) await page.screenshot({ path: fileURLToPath(new URL("failure.png", output)), fullPage: true }).catch(() => {});

@@ -27,8 +27,15 @@ try {
   await page.getByLabel("新标签页明暗模式", { exact: true }).count().then(count => assert.equal(count, 0, "background overrides stay out of the principle page"));
   await page.getByRole("button", { name: "整体样式", exact: true }).click();
   await page.getByLabel("新标签页明暗模式", { exact: true }).selectOption("dark");
-  await page.getByRole("button", { name: "恢复整体样式默认值", exact: true }).click(); await page.waitForFunction(() => localStorage.getItem("schedulepin.settings.v2") !== null);
+  await page.getByRole("button", { name: "深色", exact: true }).click(); await page.getByRole("button", { name: "圆润", exact: true }).click();
+  await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  await page.waitForFunction(() => { const value = JSON.parse(localStorage.getItem("schedulepin.settings.v2")); return value.theme === "dark" && value.fontFamily === "rounded"; });
+  await page.getByRole("button", { name: "整体样式", exact: true }).click();
+  await page.reload(); await page.getByRole("button", { name: "设置", exact: true }).click();
+  assert.equal(await page.getByLabel("新标签页明暗模式", { exact: true }).inputValue(), "dark", "new-tab override persists after reload");
+  await page.getByRole("button", { name: "恢复整体样式默认值", exact: true }).click(); await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.settings.v2")).theme === "warm");
   assert.equal(await page.getByLabel("新标签页明暗模式", { exact: true }).inputValue(), "dark", "restoring overall style preserves new-tab override");
+  await page.locator('.settings-page').evaluate(el => { el.scrollTop = 0; });
   await page.screenshot({ path: fileURLToPath(new URL("overall.png", output)), fullPage: true });
   await page.getByRole("button", { name: "原则卡片", exact: true }).click();
   await page.locator(".appearance-controls .toggle-row").click();
@@ -36,8 +43,28 @@ try {
   assert.equal(await page.getByText("卡片字体", { exact: true }).count(), 1, "follow mode keeps independent typography");
   await page.locator(".appearance-controls .toggle-row").click(); await page.getByRole("button", { name: "恢复卡片样式默认值", exact: true }).click();
   assert.equal(await page.locator("textarea.principle-editor").inputValue(), "先完成当前的一件事。\n再继续下一件事。", "restoring card style never clears content");
+  await page.locator('.settings-page').evaluate(el => { el.scrollTop = 0; });
   await page.screenshot({ path: fileURLToPath(new URL("principle.png", output)), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: fileURLToPath(new URL("narrow.png", output)), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('button', { name: '整体样式', exact: true }).click();
+  await page.evaluate(() => {
+    window.originalSettingsWrite = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'schedulepin.settings.v2') throw new Error('测试保存失败');
+      return window.originalSettingsWrite.call(this, key, value);
+    };
+  });
+  await page.getByRole('button', { name: '深色', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: '测试保存失败' }).waitFor();
+  await page.getByRole('button', { name: '返回', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: '测试保存失败' }).waitFor();
+  assert.equal(await page.getByRole('navigation', { name: '设置分类' }).count(), 1, 'failed save stays reviewable when returning');
+  await page.evaluate(() => { Storage.prototype.setItem = window.originalSettingsWrite; });
+  await page.getByRole('button', { name: '重试', exact: true }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('schedulepin.settings.v2')).theme === 'dark');
+  await page.getByRole('button', { name: '返回', exact: true }).click();
+  await page.locator('.newtab-workspace').waitFor();
   await context.close();
   console.log("PASS: settings navigation ownership, immediate persistence, scoped restores and principle follow mode.");
 } finally { await browser.close(); await server.close(); }
