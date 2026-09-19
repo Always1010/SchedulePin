@@ -28,3 +28,30 @@ test("用户已保存的文字、空字符串和主题不被默认值覆盖", as
     assert.equal(settings.theme, "dark"); assert.equal(settings.fontScale, 1.2);
   }
 });
+
+test("连续局部保存不会覆盖其他设置或原则内容", async () => {
+  values.clear();
+  await data.saveSettings({ ...data.defaultSettings, principle: "保留我的原则", desktopEnabled: true });
+  await Promise.all([
+    data.patchSettings({ theme: "dark" }),
+    data.patchSettings({ fontScale: 1.2 }),
+    data.patchSettings({ cardRadius: 14 }),
+  ]);
+  const settings = await data.loadSettings();
+  assert.equal(settings.theme, "dark");
+  assert.equal(settings.fontScale, 1.2);
+  assert.equal(settings.cardRadius, 14);
+  assert.equal(settings.principle, "保留我的原则");
+  assert.equal(settings.desktopEnabled, true);
+});
+
+test("局部保存失败后仍可重试，后续写入不会被失败队列阻断", async () => {
+  values.clear();
+  await data.saveSettings(data.defaultSettings);
+  const original = globalThis.localStorage.setItem;
+  globalThis.localStorage.setItem = () => { throw new Error("存储不可用"); };
+  await assert.rejects(data.patchSettings({ theme: "dark" }), /存储不可用/);
+  globalThis.localStorage.setItem = original;
+  await data.patchSettings({ theme: "light" });
+  assert.equal((await data.loadSettings()).theme, "light");
+});

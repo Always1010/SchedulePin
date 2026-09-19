@@ -185,6 +185,21 @@ export async function saveSettings(settings: AppSettings) {
   await writeValue(SETTINGS_KEY, settings);
 }
 
+let settingsWrites: Promise<unknown> = Promise.resolve();
+export function patchSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  const write = async () => {
+    const next = { ...await loadSettings(), ...patch };
+    await saveSettings(next);
+    return next;
+  };
+  const run = () => typeof navigator !== "undefined" && navigator.locks
+    ? navigator.locks.request(SETTINGS_KEY, write)
+    : write();
+  const task = settingsWrites.then(run, run);
+  settingsWrites = task.catch(() => {});
+  return task;
+}
+
 export function subscribeStorage(listener: () => void): () => void {
   if (hasExtensionStorage()) {
     const callback = (changes: Record<string, chrome.storage.StorageChange>) => {
