@@ -168,7 +168,7 @@ export async function loadSettings(): Promise<AppSettings> {
     .filter(Boolean)
     .join("。")
     .replace(/。+/g, "。")
-    .replace(/。?$/, "。");
+    .replace(/([^。])$/, "$1。");
   const settings = {
     ...defaultSettings,
     ...(stored ?? {}),

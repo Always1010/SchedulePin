@@ -198,3 +198,13 @@
 - 解决方案：将界面密度改为 0–100、步长为 5 的布局间距滑条，由同一个连续数值插值生成页面留白、区块间距、卡片内边距、正文行高、任务行高和快速输入框间距；真实页面、侧边栏、实时预览及桌面壁纸共用对应数值。旧三档设置自动迁移到 0、50、100，同时保留兼容字段供已安装的旧版桌面助手读取。
 - 验证方式：前端生产构建通过；滑条两端会生成不同的布局变量和桌面渲染间距，旧三档存储值可迁移为对应数值且同步数据仍包含旧助手可识别的密度字段。
 - 相关文件：`src/types.ts`、`src/data.ts`、`src/visualDesign.ts`、`src/App.tsx`、`src/components/AppearanceEditor.tsx`、`src/components/SettingsPage.tsx`、`src/styles.css`、`public/service-worker.js`、`native-helper/src/model.rs`、`native-helper/src/renderer.rs`
+
+## SP-021：首次启动的 Principle 被空迁移结果覆盖
+
+- 日期：2026-09-19
+- 状态：已解决
+- 现象或修改背景：首次启动、没有历史纪律条目时，Principle 卡片只显示一个“。”，没有显示默认原则文字。
+- 原因分析：旧数据迁移为段落时，结尾标点正则同时匹配空字符串，生成非空的“。”并覆盖默认值。
+- 解决方案：只为非空且没有句号结尾的内容补充句号；空迁移结果回退到默认原则。已保存的自定义文字（包括空字符串和单独句号）保持不变。
+- 验证方式：`node scripts/test-settings.mjs` 三项测试通过，覆盖首次启动、旧原则迁移和既有原则与主题保留。
+- 相关文件：`src/data.ts`、`scripts/test-settings.mjs`、`package.json`
