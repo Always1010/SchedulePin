@@ -21,7 +21,7 @@
 .principle-collapse-button { display: grid; place-items: center; }
 .principle-collapsed .principle-collapse-button svg { transform: rotate(-90deg); }
 .newtab-quiet { max-width: 700px; margin: 7cqh auto 0; color: var(--ink); }
-.newtab-quiet > p { margin-top: 25px; color: var(--muted); font-size: calc(14px * var(--font-scale)); }
+.newtab-quiet > p { display: inline-flex; margin: 25px 0 0; padding: 10px 13px; border: 1px solid var(--line); border-radius: min(10px, var(--card-radius)); color: var(--ink); background: var(--surface); backdrop-filter: blur(10px); font-size: calc(14px * var(--font-scale)); line-height: 1.5; }
 .newtab-quiet > button { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); padding: 10px 15px; border-radius: 10px; color: var(--ink); background: var(--surface); cursor: pointer; }
 .newtab-loading { padding: 40px; color: var(--muted); }
 .newtab-error { padding: 8px 20px; color: var(--ink); font-size: 13px; }
