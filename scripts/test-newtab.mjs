@@ -44,23 +44,23 @@ try {
   assert.equal(await page.locator(".shortcut-row a").first().getAttribute("href"), "https://example.com/project");
   await page.getByRole("button", { name: "添加入口", exact: true }).click();
   await page.getByLabel("网址", { exact: true }).fill("https://www.example.org/article/1");
-  assert.equal(await page.locator(".shortcut-entry-preview .shortcut-copy").textContent(), "example.org");
+  assert.equal(await page.locator(".shortcut-entry-preview .shortcut-copy").textContent(), "example");
   await page.getByRole("button", { name: "保存", exact: true }).click();
   await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
   await page.getByRole("button", { name: "整理", exact: true }).click();
-  await page.getByRole("button", { name: "编辑 example.org", exact: true }).click();
+  await page.getByRole("button", { name: "编辑 example", exact: true }).click();
   assert.equal(await page.getByLabel("名称", { exact: true }).inputValue(), "");
   await page.getByLabel("网址", { exact: true }).fill("https://docs.example.org/start");
   await page.getByRole("button", { name: "保存", exact: true }).click();
   await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
-  await page.getByRole("button", { name: "编辑 docs.example.org", exact: true }).waitFor();
+  await page.getByRole("button", { name: "编辑 example", exact: true }).waitFor();
   await page.getByRole("button", { name: "完成", exact: true }).click();
   await page.getByRole("button", { name: "添加入口", exact: true }).click();
   await page.getByLabel("网址", { exact: true }).fill(iconBase);
   await page.getByRole("button", { name: "保存", exact: true }).click();
   await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
   await page.locator(`a[href="${iconBase}/"] .site-icon.has-image`).waitFor();
-  assert.equal(await page.locator('a[href="https://docs.example.org/start"] .site-icon-letter').textContent(), "D");
+  assert.equal(await page.locator('a[href="https://docs.example.org/start"] .site-icon-letter').textContent(), "E");
   assert.equal(await page.locator(`a[href="${iconBase}/"] img`).getAttribute("referrerpolicy"), "no-referrer");
   await page.evaluate(() => {
     const now = new Date();
@@ -257,7 +257,7 @@ try {
   await page.reload(); await page.locator(".site-icon.has-image").waitFor();
   assert.ok(await page.evaluate(() => document.querySelector(".newtab-navigation").getBoundingClientRect().x >= document.querySelector(".newtab-plan-region").getBoundingClientRect().right - 1), "right-side navigation keeps portrait columns");
   assert.equal(await page.locator('a[href="https://docs.example.com/start"] .shortcut-copy small').count(), 0, "default domain is not repeated");
-  assert.equal(await page.locator('a[href="https://read.example.com"] .shortcut-copy small').textContent(), "read.example.com");
+  assert.equal(await page.locator('a[href="https://read.example.com"] .shortcut-copy small').textContent(), "example");
   await page.emulateMedia({ reducedMotion: "reduce" });
   const entry = page.locator(".shortcut-row a").first();
   await entry.hover();

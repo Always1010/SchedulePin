@@ -268,3 +268,13 @@
 - 解决方案：合并为单一“桌面展示”入口，在同一页面依次显示助手状态、启用开关、显示范围、显示器列表和当前显示器的布局编辑器；全部屏幕模式明确提示每块屏幕分别保存布局。
 - 验证方式：TypeScript 与设置浏览器回归通过；设置导航仅保留一个桌面展示入口，显示范围、显示器选择和当前显示器布局同时可见。
 - 相关文件：`src/components/SettingsNavigation.tsx`、`src/components/SettingsPage.tsx`、`src/components/settings-navigation.css`、`scripts/test-settings-ui.mjs`
+
+## SP-028：快捷导航把完整主机名当作网站简称
+
+- 日期：2026-09-19
+- 状态：已解决
+- 现象或修改背景：快捷导航在名称留空或开启域名显示时展示 `docs.example.com` 等完整主机名，协议虽已移除，但子域名和 `.com` 等后缀仍使列表显得冗长，不能快速识别站点主体。
+- 原因分析：`linkDomain` 只移除了 `www.`，没有区分主机名、可注册域名和用于界面展示的网站简称。
+- 解决方案：从主机名提取主域名主体，移除子域名和常见顶级域名结构；`docs.example.com`、`www2.example.org` 和 `example.co.uk` 均显示为 `example`，localhost 与 IP 地址保持完整。设置和编辑器文案同步改为“网站简称”。
+- 验证方式：导航单元测试覆盖普通子域名、带国家地区后缀的域名、localhost 和 IPv4；主页浏览器回归确认自定义名称下方显示简化后的站点名称。
+- 相关文件：`src/navigation.ts`、`src/components/ShortcutPanel.tsx`、`src/components/SettingsPage.tsx`、`scripts/test-navigation.mjs`、`scripts/test-newtab.mjs`

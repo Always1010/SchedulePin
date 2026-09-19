@@ -24,14 +24,17 @@ test("删除分组保留链接及其固定状态", () => {
   assert.equal(next.links[0].pinned, true);
   assert.equal(original.links[0].groupId, "g");
 });
-test("名称留空跟随域名，编辑网址不会固化旧域名，自定义名称保留", () => {
+test("名称留空跟随网站简称，去掉协议、子域名和域名后缀", () => {
   const saved = nav.applyNavigationAction(nav.emptyNavigation(), { type: "save-link", link: { ...link("a"), title: "  ", url: "https://www.example.com/article/123" } });
   assert.equal(saved.links[0].title, "");
-  assert.equal(nav.linkTitle(saved.links[0]), "example.com");
+  assert.equal(nav.linkTitle(saved.links[0]), "example");
   const updated = nav.applyNavigationAction(saved, { type: "save-link", link: { ...saved.links[0], url: "docs.example.org/start" } });
-  assert.equal(nav.linkTitle(updated.links[0]), "docs.example.org");
+  assert.equal(nav.linkTitle(updated.links[0]), "example");
   assert.equal(nav.linkTitle({ title: "我的文档", url: "https://docs.example.org" }), "我的文档");
-  assert.equal(nav.linkDomain("https://www2.example.org/path"), "www2.example.org");
+  assert.equal(nav.linkDomain("https://www2.example.org/path"), "example");
+  assert.equal(nav.linkDomain("https://docs.example.co.uk/path"), "example");
+  assert.equal(nav.linkDomain("http://localhost:3000/path"), "localhost");
+  assert.equal(nav.linkDomain("http://192.168.1.10/path"), "192.168.1.10");
   assert.throws(() => nav.applyNavigationAction(saved, { type: "save-group", group: { id: "g", name: "  " } }));
 });
 test("编辑、排序和固定不改变链接身份或其他记录", () => {

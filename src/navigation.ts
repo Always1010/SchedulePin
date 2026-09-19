@@ -1,6 +1,6 @@
 export interface QuickLink {
   id: string;
-  // Empty means follow the URL's domain; existing custom titles remain untouched.
+  // Empty means derive a short site name from the URL; existing custom titles remain untouched.
   title: string;
   url: string;
   groupId: string | null;
@@ -35,7 +35,13 @@ export function normalizeLinkUrl(input: string): string {
 }
 
 export function linkDomain(url: string): string {
-  return new URL(url).hostname.replace(/^www\./i, "");
+  const hostname = new URL(url).hostname.replace(/^www\d*\./i, "");
+  if (hostname === "localhost" || hostname.includes(":") || /^\d+(?:\.\d+){3}$/.test(hostname)) return hostname;
+  const labels = hostname.split(".").filter(Boolean);
+  if (labels.length < 2) return hostname;
+  const commonSecondLevelSuffix = new Set(["ac", "co", "com", "edu", "gov", "net", "org"]);
+  const countryCodeSuffix = labels.at(-1)?.length === 2 && commonSecondLevelSuffix.has(labels.at(-2) ?? "");
+  return labels.at(countryCodeSuffix && labels.length > 2 ? -3 : -2) ?? hostname;
 }
 
 export function linkTitle(link: Pick<QuickLink, "title" | "url">): string {
