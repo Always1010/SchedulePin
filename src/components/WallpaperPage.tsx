@@ -11,8 +11,8 @@ import { AppearancePreview, type PreviewMode } from "./AppearancePreview";
 import "./wallpaper-page.css";
 
 function WallpaperThumb({ item }: { item: Wallpaper }) { const src = useBlobUrl(item.thumbnail); return <img src={src} alt="" loading="lazy" />; }
-export function WallpaperPage({ preferences, wallpapers, settings, tasks, navigation, navigationPreferences, onBack }: {
-  preferences: BackgroundPreferences; wallpapers: Wallpaper[]; settings: AppSettings; tasks: PlanItem[]; navigation: NavigationData; navigationPreferences: NewTabPreferences; onBack: () => void;
+export function WallpaperPage({ preferences, wallpapers, settings, tasks, navigation, navigationPreferences, onBack, onWindowCurrent }: {
+  preferences: BackgroundPreferences; wallpapers: Wallpaper[]; settings: AppSettings; tasks: PlanItem[]; navigation: NavigationData; navigationPreferences: NewTabPreferences; onBack: () => void; onWindowCurrent: (item?: Wallpaper) => void;
 }) {
   const [draft,setDraft] = useState(preferences); const [selected,setSelected] = useState<Wallpaper | undefined>(wallpapers.find(w=>w.id===preferences.currentId));
   const [tab,setTab] = useState<"style"|"library"|"online">("style"); const [mode,setMode] = useState<PreviewMode>("newtab");
@@ -38,6 +38,7 @@ export function WallpaperPage({ preferences, wallpapers, settings, tasks, naviga
   const save = () => void run(async()=>{
     const item = draft.style === "photo" ? await preparePhoto() : selected;
     await saveBackground({...draft,currentId:item?.id ?? draft.currentId,lastDay:backgroundDay()},item?[item]:[]);
+    onWindowCurrent(draft.style === "photo" && draft.mode === "open" ? item : undefined);
     onBack();
   });
   const loadOnline = () => void run(async()=>{ const list = await discoverWallpapers(draft.category,offset); setOnline(list); setOffset(offset+12); });

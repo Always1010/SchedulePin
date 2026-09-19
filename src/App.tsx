@@ -178,7 +178,7 @@ export default function App() {
         </div>
       </header>
 
-      {page === "background" ? <WallpaperPage preferences={background.preferences} wallpapers={background.wallpapers} settings={settings} tasks={tasks} navigation={navigation} navigationPreferences={preferences} onBack={()=>setPage("main")}/> : page === "archive" ? (
+      {page === "background" ? <WallpaperPage preferences={background.preferences} wallpapers={background.wallpapers} settings={settings} tasks={tasks} navigation={navigation} navigationPreferences={preferences} onBack={()=>setPage("main")} onWindowCurrent={background.selectForWindow}/> : page === "archive" ? (
         <ArchivePage items={archived} onBack={() => setPage("main")} onRestore={restoreArchived} onDelete={remove} />
       ) : page === "appearance" ? (
         <AppearanceEditor
@@ -204,7 +204,7 @@ export default function App() {
         </NewTabLayout>
       ) : <div className="newtab-loading">{navigationError || "正在打开新标签页…"}</div>}
       {(preferenceError || (navigationReady && navigationError)) && <div className="newtab-error" role="alert">{preferenceError || navigationError}</div>}
-      {newTabMain && background.ready && <BackgroundToolbar preferences={background.preferences} wallpapers={background.wallpapers} current={background.current} onOpen={()=>setPage("background")}/>}
+      {newTabMain && background.ready && <BackgroundToolbar preferences={background.preferences} wallpapers={background.wallpapers} current={background.current} onOpen={()=>setPage("background")} onWindowCurrent={background.selectForWindow}/>}
       {newTabMain && background.error && <div className="background-message" role="status">{background.error}<button type="button" onClick={()=>background.setError("")}>关闭</button></div>}
 
       <AddItemDialog open={addOpen} date={today} onClose={() => setAddOpen(false)} onSubmit={add} />

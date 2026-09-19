@@ -107,7 +107,19 @@ try {
   await page.getByRole("button",{name:"取消",exact:true}).click();
   await page.evaluate(()=>new Promise(resolve=>{const open=indexedDB.open("schedulepin.background.v1",1);open.onsuccess=()=>{const db=open.result;const tx=db.transaction("preferences","readwrite");const store=tx.objectStore("preferences");const r=store.get("current");r.onsuccess=()=>store.put({...r.result,mode:"open",pool:"favorites"},"current");tx.oncomplete=()=>{db.close();resolve();};};}));
   await page.reload();await page.locator(`.background-layer:not([data-wallpaper-id="${onlineId}"])[data-wallpaper-id]`).waitFor();
-  assert.notEqual((await state()).preferences.currentId,onlineId,"open mode changes wallpaper on reload");
-  assert.deepEqual(errors,[]);console.log("PASS: online metadata/attribution, collection download, daily retention and offline wallpaper; desktop settings preserved.");
+  const firstOpenId=await page.locator(".background-layer").getAttribute("data-wallpaper-id");
+  assert.equal((await state()).preferences.currentId,onlineId,"open mode keeps its selection out of global preferences");
+  const sibling=await context.newPage();await sibling.goto(base);await sibling.locator(`.background-layer:not([data-wallpaper-id="${onlineId}"])[data-wallpaper-id]`).waitFor();
+  const siblingId=await sibling.locator(".background-layer").getAttribute("data-wallpaper-id");
+  assert.equal(await page.locator(".background-layer").getAttribute("data-wallpaper-id"),firstOpenId,"opening another window leaves the existing window unchanged");
+  await page.getByRole("button",{name:"换一张",exact:true}).click();await page.locator(`.background-layer:not([data-wallpaper-id="${firstOpenId}"])[data-wallpaper-id]`).waitFor();
+  const manualId=await page.locator(".background-layer").getAttribute("data-wallpaper-id");
+  assert.equal(await sibling.locator(".background-layer").getAttribute("data-wallpaper-id"),siblingId,"manual replacement only changes its own window");
+  assert.equal((await state()).preferences.currentId,onlineId,"manual replacement does not overwrite global preferences");
+  await page.reload();await page.locator(`.background-layer:not([data-wallpaper-id="${manualId}"])[data-wallpaper-id]`).waitFor();
+  assert.equal(await sibling.locator(".background-layer").getAttribute("data-wallpaper-id"),siblingId,"refreshing one window leaves the other window unchanged");
+  assert.equal((await state()).preferences.currentId,onlineId,"refresh rotation remains window-local");
+  await sibling.close();
+  assert.deepEqual(errors,[]);console.log("PASS: online metadata/attribution, daily retention, offline wallpaper and window-local open rotation; desktop settings preserved.");
 } catch(error) { const page=browser.contexts()[0]?.pages()[0];if(page)await page.screenshot({path:fileURLToPath(new URL("failure.png",output)),fullPage:true}).catch(()=>{});throw error; }
 finally {await browser.close();await server.close();}

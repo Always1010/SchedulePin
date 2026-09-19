@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { backgroundDay, defaultBackground, shouldRotate, type Wallpaper } from "./backgroundModel";
-import { readBackground, saveBackground, subscribeBackground, trimBackgroundCache } from "./backgroundStore";
+import { cacheWallpapers, readBackground, saveBackground, subscribeBackground, trimBackgroundCache } from "./backgroundStore";
 import { discoverWallpapers, downloadWallpaper } from "./backgroundSource";
+
+const SESSION_WALLPAPER_KEY = "schedulepin.background.window-current.v1";
 
 export function useBlobUrl(blob?: Blob) {
   const [value, setValue] = useState<{ blob: Blob; url: string } | null>(null);
@@ -21,13 +23,22 @@ export async function nextWallpaper(preferences: typeof defaultBackground, wallp
 }
 export function useBackground(enabled: boolean) {
   const [state, setState] = useState<{ preferences: typeof defaultBackground; wallpapers: Wallpaper[] }>({ preferences: defaultBackground, wallpapers: [] });
+  const [windowCurrent, setWindowCurrent] = useState<Wallpaper>();
   const [ready, setReady] = useState(false); const [error, setError] = useState("");
   const attempted = useRef(false);
+  const selectForWindow = (item?: Wallpaper) => {
+    setWindowCurrent(item);
+    if (item) {
+      setState(previous => ({ ...previous, wallpapers: previous.wallpapers.some(wallpaper => wallpaper.id === item.id) ? previous.wallpapers : [...previous.wallpapers, item] }));
+      try { sessionStorage.setItem(SESSION_WALLPAPER_KEY, item.id); } catch { /* Session storage may be unavailable in restricted contexts. */ }
+    }
+  };
   useEffect(() => {
     let active = true, version = 0;
     const refresh = async () => { const request = ++version; try { const next = await readBackground(); if (active && request === version) { setState(next); setReady(true); } } catch { if (active) setError("无法读取本地壁纸库，请重试。"); } };
-    void refresh(); const stop = subscribeBackground(refresh); return () => { active = false; stop(); };
+    void refresh(); const stop = subscribeBackground(change => { if (change !== "cache") void refresh(); }); return () => { active = false; stop(); };
   }, []);
+  useEffect(() => { if (state.preferences.mode !== "open") setWindowCurrent(undefined); }, [state.preferences.mode]);
   useEffect(() => {
     if (!ready || !enabled || attempted.current) return;
     attempted.current = true;
@@ -35,12 +46,19 @@ export function useBackground(enabled: boolean) {
     let active = true;
     void (async () => {
       try {
-        const next = await nextWallpaper(state.preferences, state.wallpapers);
+        let previousId = state.preferences.currentId;
+        try { previousId = sessionStorage.getItem(SESSION_WALLPAPER_KEY) ?? previousId; } catch { /* Use the persisted fallback. */ }
+        const next = await nextWallpaper({ ...state.preferences, currentId: previousId }, state.wallpapers);
         while (active && (document.visibilityState !== "visible" || document.activeElement?.matches('input,textarea,select,[contenteditable="true"]') || document.querySelector('dialog[open], [role="dialog"]'))) await new Promise(resolve => setTimeout(resolve, 500));
-        if (active) { await saveBackground({ currentId: next.id, lastDay: backgroundDay() }, [next], state.preferences.revision); await trimBackgroundCache(); }
+        if (active && state.preferences.mode === "open") {
+          await cacheWallpapers([next]); selectForWindow(next); await trimBackgroundCache();
+        } else if (active) {
+          await saveBackground({ currentId: next.id, lastDay: backgroundDay() }, [next], state.preferences.revision); await trimBackgroundCache();
+        }
       } catch { if (active) setError("自动换图未成功，已保留当前背景。可打开壁纸库重试。"); }
     })();
     return () => { active = false; };
   }, [ready, enabled]); // Preferences are intentionally captured once per page opening.
-  return { ...state, ready, error, setError, current: state.wallpapers.find(w => w.id === state.preferences.currentId) };
+  const current = windowCurrent ? state.wallpapers.find(w => w.id === windowCurrent.id) ?? windowCurrent : state.wallpapers.find(w => w.id === state.preferences.currentId);
+  return { ...state, ready, error, setError, current, selectForWindow };
 }
