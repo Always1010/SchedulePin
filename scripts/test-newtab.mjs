@@ -124,6 +124,17 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: fileURLToPath(new URL("landscape.png", output)), fullPage: true });
   await page.setViewportSize({ width: 1080, height: 1500 });
+  await page.getByText("固定的网站显示在“已固定”中；只有未固定的网站会按分类显示。", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "整理", exact: true }).click();
+  const manageLayout = await page.locator('[data-link-id="link-0"]').evaluate(row => {
+    const link = row.querySelector("a")?.getBoundingClientRect();
+    const copy = row.querySelector(".shortcut-copy")?.getBoundingClientRect();
+    const actions = row.querySelector(".shortcut-row-actions")?.getBoundingClientRect();
+    return { copyWidth: copy?.width ?? 0, linkBottom: link?.bottom ?? 0, actionsTop: actions?.top ?? 0 };
+  });
+  assert.ok(manageLayout.copyWidth >= 100, "narrow navigation keeps an entry title readable while managing");
+  assert.ok(manageLayout.actionsTop >= manageLayout.linkBottom - 1, "management actions move below the entry instead of squeezing its title");
+  await page.getByRole("button", { name: "完成", exact: true }).click();
   await page.screenshot({ path: fileURLToPath(new URL("portrait.png", output)), fullPage: true });
   await page.setViewportSize({ width: 864, height: 800 });
   await page.locator(".newtab-plan-region").evaluate(el => { el.scrollTop = 500; });

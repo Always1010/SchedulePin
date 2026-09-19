@@ -120,6 +120,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
       }
     }} placeholder="查找入口…" aria-label="查找网站入口" aria-keyshortcuts="/" role="combobox" aria-autocomplete="list" aria-controls={q ? "shortcut-search-results" : undefined} aria-expanded={Boolean(q)} aria-activedescendant={q && selectedLink ? `shortcut-result-${activeResult}` : undefined} />{query ? <button type="button" onClick={() => { setQuery(""); setActiveResult(0); }} aria-label="清除查找"><X size={14} /></button> : <kbd aria-hidden="true">/</kbd>}</label>
     {q ? (searchResults.length ? rows(searchResults, true) : <p className="shortcut-hint">没有找到匹配的入口。</p>) : <>
+    {data.groups.length > 0 && <p className="shortcut-group-guidance">固定的网站显示在“已固定”中；只有未固定的网站会按分类显示。</p>}
     {pinned.length > 0 && <section><h3 className="shortcut-section-label"><Pin size={13} aria-hidden="true" />已固定<small>{pinned.length}</small></h3>{rows(pinned)}</section>}
     {sectionLinks.map(({ group, links }) => {
       if (!links.length && (!managing || !group.id || q)) return null;
