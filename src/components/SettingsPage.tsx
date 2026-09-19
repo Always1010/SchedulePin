@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, Check, ChevronRight, Download, ExternalLink, Laptop,
-  Monitor, Palette, RefreshCw, RotateCcw, Type, Unplug,
+  Monitor, Palette, RefreshCw, RotateCcw, Type, Unplug, Link,
 } from "lucide-react";
 import type { AppSettings, HelperStatus, MonitorInfo } from "../types";
 import { defaultDesktopLayout, DesktopLayoutEditor } from "./DesktopLayoutEditor";
+import { ShortcutPanel } from "./ShortcutPanel";
+import { useNavigation } from "../useNavigation";
+import { changeNavigation, changeNewTabPreferences, type NewTabPreferences } from "../navigation";
 
 interface Props {
   settings: AppSettings;
@@ -17,7 +20,7 @@ interface Props {
   onBack: () => void;
 }
 
-type SettingsSection = "hub" | "principle" | "desktop";
+type SettingsSection = "hub" | "principle" | "desktop" | "shortcuts";
 
 const previewMonitor: MonitorInfo = {
   id: "preview", index: 0, name: "显示器预览", x: 0, y: 0,
@@ -28,6 +31,12 @@ const releasesUrl = "https://github.com/Always1010/SchedulePin/releases";
 export function SettingsPage({ settings, helper, initialSection = "hub", onChange, onRefreshHelper, onRestoreWallpaper, onOpenAppearance, onBack }: Props) {
   const [section, setSection] = useState<SettingsSection>(initialSection);
   const [draft, setDraft] = useState(settings);
+  const { navigation, preferences, navigationReady, navigationError } = useNavigation();
+  const [preferenceError, setPreferenceError] = useState("");
+  const changePreferences = async (next: Partial<NewTabPreferences>) => {
+    setPreferenceError("");
+    try { await changeNewTabPreferences(next); } catch { setPreferenceError("无法保存导航偏好，请重试。"); }
+  };
   useEffect(() => setDraft(settings), [settings]);
   useEffect(() => setSection(initialSection), [initialSection]);
 
@@ -48,11 +57,16 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
     <main className="settings-page page-shell">
       <div className="page-title-row">
         <button type="button" className="back-button" onClick={goBack}><ArrowLeft size={17} />返回</button>
-        <div><span className="eyebrow">Settings</span><h1>{section === "hub" ? "设置" : section === "principle" ? "Principle" : "桌面展示"}</h1><p>{section === "hub" ? "选择需要调整的部分。" : section === "principle" ? "编辑长期遵循的做事原则。" : "配置壁纸、显示器和桌面助手。"}</p></div>
+        <div><span className="eyebrow">Settings</span><h1>{section === "hub" ? "设置" : section === "principle" ? "Principle" : section === "shortcuts" ? "快捷访问" : "桌面展示"}</h1><p>{section === "hub" ? "选择需要调整的部分。" : section === "principle" ? "编辑长期遵循的做事原则。" : section === "shortcuts" ? "管理常用网站和新标签页布局。" : "配置壁纸、显示器和桌面助手。"}</p></div>
       </div>
 
       {section === "hub" && (
         <div className="settings-hub">
+          <button type="button" className="settings-hub-card" onClick={() => setSection("shortcuts")}>
+            <span className="hub-icon"><Link size={21} /></span>
+            <div><h2>快捷访问</h2><p>管理链接、分组、导航位置和待办展示。</p><span className="hub-preview-text">{navigation.links.length} 个入口</span></div>
+            <ChevronRight size={18} />
+          </button>
           <button type="button" className="settings-hub-card appearance-entry" onClick={onOpenAppearance}>
             <span className="hub-icon"><Palette size={21} /></span>
             <div><h2>外观</h2><p>调整页面整体外观，并单独定制 Principle。</p><span className="appearance-summary"><i /><i /><i />{Math.round(draft.fontScale * 100)}% 字号 · {Math.round(draft.densityLevel)}% 间距 · {draft.cardRadius}px 圆角</span></div>
@@ -60,7 +74,7 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
           </button>
           <button type="button" className="settings-hub-card" onClick={() => setSection("principle")}>
             <span className="hub-icon"><Type size={21} /></span>
-            <div><h2>Principle</h2><p>编辑显示在主页顶部的原则段落。</p><span className="hub-preview-text">{draft.principle || "尚未填写 Principle"}</span></div>
+            <div><h2>Principle</h2><p>编辑计划区域中的原则段落。</p><span className="hub-preview-text">{draft.principle || "尚未填写 Principle"}</span></div>
             <ChevronRight size={18} />
           </button>
           <button type="button" className="settings-hub-card desktop-entry" onClick={() => setSection("desktop")}>
@@ -70,6 +84,16 @@ export function SettingsPage({ settings, helper, initialSection = "hub", onChang
           </button>
         </div>
       )}
+
+      {section === "shortcuts" && <section className="settings-card shortcut-settings">
+        <div className="shortcut-settings-options">
+          <label>导航位置<select value={preferences.side} disabled={!navigationReady} onChange={event => void changePreferences({ side: event.target.value as "left" | "right" })}><option value="left">左侧</option><option value="right">右侧</option></select></label>
+          <label><input type="checkbox" checked={preferences.showDomains} disabled={!navigationReady} onChange={event => void changePreferences({ showDomains: event.target.checked })} />显示域名</label>
+          <label><input type="checkbox" checked={preferences.tasksVisible} disabled={!navigationReady} onChange={event => void changePreferences({ tasksVisible: event.target.checked })} />展开完整待办</label>
+        </div>
+        {(navigationError || preferenceError) && <p role="alert">{navigationError || preferenceError}</p>}
+        {navigationReady && <ShortcutPanel data={navigation} preferences={preferences} onAction={changeNavigation} onPreferences={changeNewTabPreferences} />}
+      </section>}
 
       {section === "principle" && (
         <section className="settings-card settings-detail-card">

@@ -1,0 +1,101 @@
+import { useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, ExternalLink, FolderPlus, Pencil, Pin, Plus, Search, Trash2, X } from "lucide-react";
+import type { LinkGroup, NavigationAction, NavigationData, NewTabPreferences, QuickLink } from "../navigation";
+import "./shortcuts.css";
+
+interface Props {
+  data: NavigationData;
+  preferences: NewTabPreferences;
+  onAction?: (action: NavigationAction) => Promise<void>;
+  onPreferences?: (patch: Partial<NewTabPreferences>) => Promise<void>;
+}
+type Editor = { kind: "link"; value: QuickLink } | { kind: "group"; value: LinkGroup };
+
+function ShortcutEditor({ editor, groups, onSave, onClose }: {
+  editor: Editor; groups: LinkGroup[]; onSave: (action: NavigationAction) => Promise<void>; onClose: () => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [name, setName] = useState(editor.kind === "link" ? editor.value.title : editor.value.name);
+  const [url, setUrl] = useState(editor.kind === "link" ? editor.value.url : "");
+  const [groupId, setGroupId] = useState(editor.kind === "link" ? editor.value.groupId ?? "" : "");
+  const [pinned, setPinned] = useState(editor.kind === "link" ? editor.value.pinned : false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => { dialog.current?.showModal(); }, []);
+  return <dialog ref={dialog} className="shortcut-dialog" aria-labelledby="shortcut-editor-title" onCancel={event => { if (saving) event.preventDefault(); }} onClose={onClose}>
+    <form onSubmit={async event => {
+      event.preventDefault(); setSaving(true); setError("");
+      try {
+        await onSave(editor.kind === "link"
+          ? { type: "save-link", link: { id: editor.value.id, title: name, url, groupId: groupId || null, pinned } }
+          : { type: "save-group", group: { id: editor.value.id, name } });
+        dialog.current?.close();
+      } catch (reason) { setError(reason instanceof Error ? reason.message : "保存失败，请重试"); }
+      finally { setSaving(false); }
+    }}>
+      <div className="shortcut-editor-heading"><h2 id="shortcut-editor-title">{editor.kind === "link" ? "网站入口" : "网站分组"}</h2><button type="button" disabled={saving} onClick={() => dialog.current?.close()} aria-label="关闭"><X size={18} /></button></div>
+      <label>名称<input autoFocus required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
+      {editor.kind === "link" && <>
+        <label>网址<input required value={url} onChange={event => setUrl(event.target.value)} placeholder="https://example.com" inputMode="url" /></label>
+        <label>分组<select value={groupId} onChange={event => setGroupId(event.target.value)}><option value="">未分组</option>{groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
+        <label className="shortcut-checkbox"><input type="checkbox" checked={pinned} onChange={event => setPinned(event.target.checked)} />固定到常用入口</label>
+      </>}
+      {error && <p role="alert" className="shortcut-error">{error}</p>}
+      <div className="shortcut-editor-actions"><button type="button" disabled={saving} onClick={() => dialog.current?.close()}>取消</button><button type="submit" disabled={saving || !name.trim()}>{saving ? "保存中…" : "保存"}</button></div>
+    </form>
+  </dialog>;
+}
+
+export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Props) {
+  const [query, setQuery] = useState("");
+  const [managing, setManaging] = useState(false);
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const q = query.trim().toLocaleLowerCase();
+  const match = (link: QuickLink) => !q || `${link.title} ${link.url} ${data.groups.find(group => group.id === link.groupId)?.name ?? ""}`.toLocaleLowerCase().includes(q);
+  const act = async (action: NavigationAction) => {
+    setBusy(true); setError("");
+    try { await onAction?.(action); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "操作失败，请重试"); }
+    finally { setBusy(false); }
+  };
+  const rows = (links: QuickLink[]) => <div className="shortcut-links">{links.map((link, index) => <div className="shortcut-row" key={link.id}>
+    <a href={link.url} onClick={onAction ? undefined : event => event.preventDefault()} aria-label={`${link.title}，${link.url}`}>
+      <span className="shortcut-number">{String(index + 1).padStart(2, "0")}</span><span className="shortcut-copy">{link.title}{preferences.showDomains && <small>{new URL(link.url).host}</small>}</span><ExternalLink size={12} />
+    </a>
+    {managing && <div className="shortcut-row-actions">
+      <button type="button" disabled={busy} onClick={() => setEditor({ kind: "link", value: link })} aria-label={`编辑 ${link.title}`}><Pencil size={14} /></button>
+      <button type="button" disabled={busy} onClick={() => void act({ type: "pin-link", id: link.id, pinned: !link.pinned })} aria-label={`${link.pinned ? "取消固定" : "固定"} ${link.title}`} aria-pressed={link.pinned}><Pin size={14} /></button>
+      <button type="button" disabled={busy || index === 0 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index - 1].id })} aria-label={`上移 ${link.title}`}><ArrowUp size={14} /></button>
+      <button type="button" disabled={busy || index === links.length - 1 || Boolean(q)} onClick={() => void act({ type: "move-link", id: link.id, neighborId: links[index + 1].id })} aria-label={`下移 ${link.title}`}><ArrowDown size={14} /></button>
+      <button type="button" disabled={busy} onClick={() => void act({ type: "delete-link", id: link.id })} aria-label={`删除 ${link.title}`}><Trash2 size={14} /></button>
+    </div>}
+  </div>)}</div>;
+  const pinned = data.links.filter(link => link.pinned && match(link));
+  const sections = [...data.groups, { id: "", name: "未分组" }];
+  return <nav className="shortcut-panel" aria-label="快捷访问">
+    <div className="shortcut-heading"><h2>快捷访问</h2>{onAction && <button type="button" onClick={() => setManaging(!managing)} aria-pressed={managing}>{managing ? <><Check size={14} />完成</> : "整理"}</button>}</div>
+    <label className="shortcut-search"><Search size={15} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="查找入口…" aria-label="查找网站入口" />{query && <button type="button" onClick={() => setQuery("")} aria-label="清除查找"><X size={14} /></button>}</label>
+    {pinned.length > 0 && <section><h3 className="shortcut-section-label">已固定</h3>{rows(pinned)}</section>}
+    {sections.map(group => {
+      const links = data.links.filter(link => !link.pinned && (link.groupId ?? "") === group.id && match(link));
+      if (!links.length && (!managing || !group.id || q)) return null;
+      const expanded = Boolean(q) || managing || preferences.expandedGroups.includes(group.id);
+      return <section className="shortcut-group" key={group.id}>
+        <div className="shortcut-group-heading"><button type="button" aria-expanded={expanded} onClick={() => {
+          if (!onPreferences || managing || q) return;
+          void onPreferences({ expandedGroups: expanded ? preferences.expandedGroups.filter(id => id !== group.id) : [...preferences.expandedGroups, group.id] }).catch(() => setError("无法保存分组状态，请重试"));
+        }}><ChevronDown size={14} className={expanded ? "" : "closed"} /><span>{group.name}</span><small>{links.length}</small></button>
+        {managing && group.id && <><button type="button" disabled={busy} onClick={() => setEditor({ kind: "group", value: group })} aria-label={`重命名分组 ${group.name}`}><Pencil size={13} /></button><button type="button" disabled={busy} onClick={() => void act({ type: "delete-group", id: group.id })} aria-label={`删除分组 ${group.name}，保留链接`}><Trash2 size={13} /></button></>}
+        </div>
+        {expanded && (links.length ? rows(links) : <p className="shortcut-hint">编辑链接时可选择此分组。</p>)}
+      </section>;
+    })}
+    {!data.links.length && <p className="shortcut-hint">把常用的网站或具体页面放在这里。</p>}
+    {q && !data.links.some(match) && <p className="shortcut-hint">没有找到匹配的入口。</p>}
+    {onAction && <div className="shortcut-footer"><button type="button" onClick={() => setEditor({ kind: "link", value: { id: crypto.randomUUID(), title: "", url: "", pinned: true, groupId: null } })}><Plus size={15} />添加入口</button>{managing && <button type="button" onClick={() => setEditor({ kind: "group", value: { id: crypto.randomUUID(), name: "" } })}><FolderPlus size={15} />新建分组</button>}</div>}
+    {error && <p role="alert" className="shortcut-error">{error}</p>}
+    {editor && onAction && <ShortcutEditor editor={editor} groups={data.groups} onSave={onAction} onClose={() => setEditor(null)} />}
+  </nav>;
+}
