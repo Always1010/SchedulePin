@@ -1,13 +1,17 @@
 .newtab-container { container-type: inline-size; flex: 1; display: flex; min-height: 0; min-width: 0; }
 .newtab-workspace { --navigation-width: clamp(220px, 21cqw, 260px); display: grid; grid-template-columns: var(--navigation-width) minmax(0, 1fr); width: 100%; max-width: 1600px; margin: 0 auto; flex: 1; min-height: 0; }
-.newtab-navigation { min-height: 0; min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.newtab-navigation { min-height: 0; min-width: 0; overflow-y: auto; border-right: 1px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--line) transparent; background: linear-gradient(155deg, color-mix(in srgb, var(--design-accent) 9%, var(--paper)), transparent 620px); }
 .newtab-plan-region { min-width: 0; min-height: 0; overflow-y: auto; padding: var(--density-page-top, 34px) clamp(22px, 4cqw, 64px) 40px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .newtab-workspace.navigation-right { grid-template-columns: minmax(0, 1fr) var(--navigation-width); }
 .newtab-workspace.navigation-right .newtab-navigation { order: 2; border-right: 0; border-left: 1px solid var(--line); }
 .plan-view { width: 100%; max-width: 920px; margin: 0 auto; color: var(--ink); }
 .app .plan-view .overview-day h1 { font-size: calc(23px * var(--font-scale)); margin: 6px 0 0; }
 .overview-day { gap: 18px; align-items: center; }
-.overview-progress { color: var(--muted); font-size: calc(12px * var(--font-scale)); white-space: nowrap; }
+.overview-progress { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: calc(12px * var(--font-scale)); white-space: nowrap; }
+.overview-progress-ring { display: block; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 50%; background: conic-gradient(var(--design-accent) var(--progress), var(--line) 0); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); }
+.plan-view .quick-add:focus-within { border-color: var(--design-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--design-accent) 12%, transparent); }
+.plan-view .check-button { background: var(--surface); border-color: color-mix(in srgb, var(--muted) 65%, var(--line)); }
+.plan-view .check-button.checked { color: var(--paper); border-color: var(--design-accent); background: var(--design-accent); }
 .plan-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; }
 .plan-view .todo-heading { gap: 12px; flex-wrap: wrap; }
 .plan-view .task-title-button { white-space: normal; overflow-wrap: anywhere; text-align: left; line-height: 1.65; }

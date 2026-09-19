@@ -211,6 +211,36 @@ try {
   await page.setViewportSize({ width: 864, height: 1536 }); await beside();
   await page.setViewportSize({ width: 320, height: 700 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.evaluate(({ iconBase }) => {
+    const settings = JSON.parse(localStorage.getItem("schedulepin.settings.v2"));
+    localStorage.setItem("schedulepin.settings.v2", JSON.stringify({ ...settings, theme: "warm", fontScale: 1, densityLevel: 50 }));
+    const tasks = JSON.parse(localStorage.getItem("schedulepin.items.v2")).slice(0, 4);
+    tasks[0].completed = true;
+    localStorage.setItem("schedulepin.items.v2", JSON.stringify(tasks));
+    localStorage.setItem("schedulepin.navigation.v1", JSON.stringify({ groups: [{ id: "work", name: "工作与学习" }], links: [
+      { id: "real", title: "图标加载示例", url: iconBase, pinned: true, groupId: null },
+      { id: "docs", title: "", url: "https://docs.example.com/start", pinned: true, groupId: null },
+      { id: "read", title: "阅读笔记", url: "https://read.example.com", pinned: true, groupId: null },
+      { id: "music", title: "", url: "https://music.example.com", pinned: false, groupId: "work" },
+    ] }));
+    localStorage.setItem("schedulepin.newtab.v1", JSON.stringify({ side: "right", showDomains: true, tasksVisible: true, principleExpanded: true, expandedGroups: ["work"] }));
+  }, { iconBase });
+  await page.setViewportSize({ width: 1080, height: 1400 });
+  await page.reload(); await page.locator(".site-icon.has-image").waitFor();
+  assert.ok(await page.evaluate(() => document.querySelector(".newtab-navigation").getBoundingClientRect().x >= document.querySelector(".newtab-plan-region").getBoundingClientRect().right - 1), "right-side navigation keeps portrait columns");
+  assert.equal(await page.locator('a[href="https://docs.example.com/start"] .shortcut-copy small').count(), 0, "default domain is not repeated");
+  assert.equal(await page.locator('a[href="https://read.example.com"] .shortcut-copy small').textContent(), "read.example.com");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const entry = page.locator(".shortcut-row a").first();
+  await entry.hover();
+  assert.equal(await entry.evaluate(el => getComputedStyle(el).transform), "none");
+  await page.evaluate(() => { const prefs = JSON.parse(localStorage.getItem("schedulepin.newtab.v1")); localStorage.setItem("schedulepin.newtab.v1", JSON.stringify({ ...prefs, side: "left" })); });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.reload(); await page.locator(".site-icon.has-image").waitFor();
+  await page.screenshot({ path: fileURLToPath(new URL("navigation-refresh.png", output)), fullPage: true });
+  await page.getByRole("button", { name: "添加入口", exact: true }).click();
+  await page.getByLabel("网址", { exact: true }).fill("https://www.example.com/article/1");
+  await page.screenshot({ path: fileURLToPath(new URL("entry-editor.png", output)), fullPage: true });
   assert.deepEqual(errors, []);
   console.log("PASS: navigation editing/groups/order/cross-tab sync, three shared previews, draft cancel/save, dark/light/system themes, large text and compact fallback.");
 } catch (error) {

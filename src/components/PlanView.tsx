@@ -61,7 +61,7 @@ export function PlanView({ settings, tasks, loading, sidePanel, principleExpande
     <section className={`day-hero todo-hero${sidePanel ? "" : " overview-day"}`}>
       <div><span className="eyebrow">今天</span><h1>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</h1></div>
       {sidePanel ? <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><div><strong>{progress}%</strong><span>{completed}/{tasks.length}</span></div></div>
-        : <span className="overview-progress">{completed} / {tasks.length} 已完成</span>}
+        : <span className="overview-progress"><span className="overview-progress-ring" aria-hidden="true" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties} />{completed} / {tasks.length} 已完成</span>}
     </section>
     <PrincipleCard settings={settings} expanded={principleExpanded} onToggle={onTogglePrinciple} onEdit={onEditPrinciple} />
     <section className="todo-card">

@@ -82,7 +82,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
   return <nav className="shortcut-panel" aria-label="快捷访问">
     <div className="shortcut-heading"><h2>快捷访问</h2>{onAction && <button type="button" onClick={() => setManaging(!managing)} aria-pressed={managing}>{managing ? <><Check size={14} />完成</> : "整理"}</button>}</div>
     <label className="shortcut-search"><Search size={15} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="查找入口…" aria-label="查找网站入口" />{query && <button type="button" onClick={() => setQuery("")} aria-label="清除查找"><X size={14} /></button>}</label>
-    {pinned.length > 0 && <section><h3 className="shortcut-section-label">已固定</h3>{rows(pinned)}</section>}
+    {pinned.length > 0 && <section><h3 className="shortcut-section-label"><Pin size={13} aria-hidden="true" />已固定<small>{pinned.length}</small></h3>{rows(pinned)}</section>}
     {sections.map(group => {
       const links = data.links.filter(link => !link.pinned && (link.groupId ?? "") === group.id && match(link));
       if (!links.length && (!managing || !group.id || q)) return null;
@@ -91,7 +91,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
         <div className="shortcut-group-heading"><button type="button" aria-expanded={expanded} onClick={() => {
           if (!onPreferences || managing || q) return;
           void onPreferences({ expandedGroups: expanded ? preferences.expandedGroups.filter(id => id !== group.id) : [...preferences.expandedGroups, group.id] }).catch(() => setError("无法保存分组状态，请重试"));
-        }}><ChevronDown size={14} className={expanded ? "" : "closed"} /><span>{group.name}</span><small>{links.length}</small></button>
+        }}><span className="shortcut-group-dot" aria-hidden="true" /><span className="shortcut-group-name">{group.name}</span><small>{links.length}</small><ChevronDown size={14} className={expanded ? "" : "closed"} /></button>
         {managing && group.id && <><button type="button" disabled={busy} onClick={() => setEditor({ kind: "group", value: group })} aria-label={`重命名分组 ${group.name}`}><Pencil size={13} /></button><button type="button" disabled={busy} onClick={() => void act({ type: "delete-group", id: group.id })} aria-label={`删除分组 ${group.name}，保留链接`}><Trash2 size={13} /></button></>}
         </div>
         {expanded && (links.length ? rows(links) : <p className="shortcut-hint">编辑链接时可选择此分组。</p>)}
