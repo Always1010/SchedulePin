@@ -142,7 +142,7 @@ try {
   await page.locator(".newtab-navigation").evaluate(el => { el.scrollTop = 200; });
   assert.equal(await page.locator(".newtab-plan-region").evaluate(el => el.scrollTop), 500, "navigation scrolling does not move plan");
   assert.equal(await page.locator(".topbar .todo-visibility").count(), 0, "the top bar does not duplicate the todo visibility action");
-  await page.getByRole("button", { name: "收起待办", exact: true }).click();
+  await page.getByRole("button", { name: "收起列表", exact: true }).click();
   await page.locator(".newtab-quiet").waitFor();
   await page.locator(".todo-summary-card").waitFor();
   assert.match(await page.locator(".todo-summary-progress").innerText(), /^\d+ \/ \d+ 已完成$/, "collapsed todo view keeps today's completion summary");
@@ -156,7 +156,7 @@ try {
   assert.equal(await full.locator(".task-row").count(), 35, "full plan entry ignores new-tab collapse");
   await full.close();
   await side.close();
-  await page.getByRole("button", { name: "展开完整待办", exact: true }).click();
+  await page.getByRole("button", { name: "展开完整列表", exact: true }).click();
   await page.locator(".plan-view").waitFor();
   await page.getByRole("button", { name: "收起 Principle", exact: true }).click();
   await page.reload(); await page.getByRole("button", { name: "展开 Principle", exact: true }).waitFor();

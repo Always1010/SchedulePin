@@ -24,9 +24,9 @@ export function TodoSummaryCard({ tasks, onExpand }: { tasks: PlanItem[]; onExpa
   const completed = tasks.filter(task => task.completed).length;
   return <section className="todo-summary-card" aria-label="待办摘要">
     <span className="section-icon green"><ListTodo size={17} /></span>
-    <div className="todo-summary-copy"><span>今天的待办</span><h2>待办</h2></div>
+    <div className="todo-summary-copy"><h2>To-Do List</h2></div>
     <strong className="todo-summary-progress">{tasks.length ? `${completed} / ${tasks.length} 已完成` : "今天没有待办"}</strong>
-    {onExpand && <button type="button" className="todo-summary-expand" aria-label="展开完整待办" aria-expanded={false} onClick={onExpand}><span>展开完整待办</span><ChevronDown size={16} /></button>}
+    {onExpand && <button type="button" className="todo-summary-expand" aria-label="展开完整列表" aria-expanded={false} onClick={onExpand}><span>展开完整列表</span><ChevronDown size={16} /></button>}
   </section>;
 }
 
@@ -81,7 +81,7 @@ export function PlanView({ settings, tasks, loading, sidePanel, principleExpande
         <div className="plan-actions">
           {onAddDetailed && <button type="button" className="archive-link" onClick={onAddDetailed} aria-label="添加带时间的任务"><Plus size={15} /><span>添加</span></button>}
           <button type="button" className="archive-link" onClick={onOpenArchive}><Archive size={15} />归档</button>
-          {onToggleTasks && <button type="button" className="archive-link" onClick={onToggleTasks} aria-label="收起待办" aria-expanded={true}><ChevronDown size={15} />收起</button>}
+          {onToggleTasks && <button type="button" className="archive-link" onClick={onToggleTasks} aria-label="收起列表" aria-expanded={true}><ChevronDown size={15} />收起列表</button>}
         </div>
       </div>
       {error && <p className="shortcut-error" role="alert">{error}</p>}
