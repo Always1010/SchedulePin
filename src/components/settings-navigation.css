@@ -7,6 +7,10 @@
 .settings-nav-group button.active { color: var(--ink); background: color-mix(in srgb, var(--design-accent) 16%, var(--surface)); box-shadow: inset 3px 0 var(--design-accent); }
 .settings-nav-group button svg { color: var(--design-accent); }
 .settings-content { min-width: 0; }
+.settings-content > .settings-card + .settings-card { margin-top: 18px; }
+.settings-content label { display: grid; gap: 7px; margin: 15px 0; color: var(--muted); font-size: 11px; }
+.settings-content select { min-height: 34px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: color-mix(in srgb, var(--surface) 90%, transparent); }
+.settings-content .range { height: 5px; accent-color: var(--design-accent); }
 .settings-status { margin: 0 0 14px; color: var(--muted); font-size: 11px; }
 .settings-status.error { color: #a54f41; }
 .settings-detail-actions { display: flex; justify-content: flex-end; margin: -4px 0 14px; }

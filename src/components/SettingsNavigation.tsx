@@ -19,7 +19,7 @@ const desktopSections: Array<{ id: SettingsSection; label: string; icon: typeof 
 export function SettingsNavigation({ section, onSelect }: { section: SettingsSection; onSelect: (section: SettingsSection) => void }) {
   const renderGroup = (title: string, entries: typeof browserSections) => <section className="settings-nav-group">
     <h2>{title}</h2>
-    {entries.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={section === id ? "active" : ""} onClick={() => onSelect(id)}>
+    {entries.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={section === id ? "page" : undefined} className={section === id ? "active" : ""} onClick={() => onSelect(id)}>
       <Icon size={16} /><span>{label}</span>
     </button>)}
   </section>;
