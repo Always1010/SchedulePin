@@ -10,6 +10,8 @@
     "test:icons": "node scripts/test-site-icons.mjs",
     "test:background": "node scripts/test-background.mjs",
     "test:wallpaper": "node scripts/test-wallpaper-ui.mjs",
+    "test:wallpaper-store": "node scripts/test-wallpaper-store.mjs",
+    "test:wallpaper-race": "node scripts/test-wallpaper-race.mjs",
     "test:settings-ui": "node scripts/test-settings-ui.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
