@@ -24,9 +24,14 @@ try {
   assert.equal(await page.getByText("展开完整待办", { exact: true }).count(), 0, "task visibility is not mixed into shortcuts");
   await page.getByRole("button", { name: "待办区域", exact: true }).click(); await page.getByText("展开完整待办", { exact: true }).waitFor();
   await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  const expandPrinciple = page.getByRole("checkbox", { name: "默认展开原则卡片", exact: true });
+  assert.equal(await expandPrinciple.isChecked(), true);
+  await page.locator("label.toggle-row", { hasText: "默认展开原则卡片" }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("schedulepin.newtab.v1")).principleExpanded === false);
   const principle = page.locator("textarea.principle-editor"); await principle.fill("先完成当前的一件事。\n再继续下一件事。");
   await page.waitForFunction(value => localStorage.getItem("schedulepin.settings.v2")?.includes(value), "先完成当前的一件事。"); await page.reload();
   await page.getByRole("button", { name: "设置", exact: true }).click(); await page.getByRole("button", { name: "原则卡片", exact: true }).click();
+  assert.equal(await page.getByRole("checkbox", { name: "默认展开原则卡片", exact: true }).isChecked(), false, "default collapsed state persists");
   assert.equal(await page.locator("textarea.principle-editor").inputValue(), "先完成当前的一件事。\n再继续下一件事。", "principle content saves immediately");
   await page.getByLabel("新标签页明暗模式", { exact: true }).count().then(count => assert.equal(count, 0, "background overrides stay out of the principle page"));
   await page.getByRole("button", { name: "整体样式", exact: true }).click();
