@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { createServer } from "node:http";
+import { mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build, preview } from "vite";
 
@@ -10,13 +11,18 @@ await build({ logLevel: "error" });
 const server = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
 const address = server.httpServer.address();
 const base = `http://127.0.0.1:${address.port}`;
+const icon = await readFile(new URL("../public/icons/32x32.png", import.meta.url));
+const iconServer = createServer((_request, response) => { response.writeHead(200, { "Content-Type": "image/png" }); response.end(icon); });
+await new Promise(resolve => iconServer.listen(0, "127.0.0.1", resolve));
+const iconBase = `http://127.0.0.1:${iconServer.address().port}`;
 const browser = await chromium.launch({ headless: true,
+  // Block external test hosts at DNS level. Request interception can stall Chromium favicon loads.
+  args: ["--no-proxy-server", "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost"],
   ...(process.env.SCHEDULEPIN_BROWSER_PATH ? { executablePath: process.env.SCHEDULEPIN_BROWSER_PATH } : {}) });
 const output = new URL("../.tools/ui-tests/", import.meta.url);
 await mkdir(output, { recursive: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.route("**/*", route => new URL(route.request().url()).origin === base ? route.continue() : route.abort());
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -46,6 +52,13 @@ try {
   await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
   await page.getByRole("button", { name: "编辑 docs.example.org", exact: true }).waitFor();
   await page.getByRole("button", { name: "完成", exact: true }).click();
+  await page.getByRole("button", { name: "添加入口", exact: true }).click();
+  await page.getByLabel("网址", { exact: true }).fill(iconBase);
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.locator(".shortcut-dialog").waitFor({ state: "detached" });
+  await page.locator(`a[href="${iconBase}/"] .site-icon.has-image`).waitFor();
+  assert.equal(await page.locator('a[href="https://docs.example.org/start"] .site-icon-letter').textContent(), "D");
+  assert.equal(await page.locator(`a[href="${iconBase}/"] img`).getAttribute("referrerpolicy"), "no-referrer");
   await page.evaluate(() => {
     const now = new Date();
     const day = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
@@ -204,4 +217,4 @@ try {
   const page = browser.contexts()[0]?.pages()[0];
   if (page) await page.screenshot({ path: fileURLToPath(new URL("failure.png", output)), fullPage: true }).catch(() => {});
   throw error;
-} finally { await browser.close(); await server.close(); }
+} finally { await browser.close(); await server.close(); await new Promise(resolve => iconServer.close(resolve)); }

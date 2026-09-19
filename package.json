@@ -7,6 +7,7 @@
     "test:navigation": "node --test scripts/test-navigation.mjs",
     "test:settings": "node --test scripts/test-settings.mjs",
     "test:ui": "node scripts/test-newtab.mjs",
+    "test:icons": "node scripts/test-site-icons.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

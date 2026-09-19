@@ -13,7 +13,13 @@
 .shortcut-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .shortcut-row a { display: flex; align-items: center; gap: 10px; padding: var(--nav-row-padding, 10px) 5px; text-decoration: none; color: inherit; min-height: 38px; }
 .shortcut-row a > svg { flex: 0 0 auto; color: var(--muted); margin-left: auto; }
-.shortcut-number { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.site-icon { --site-tone: #729360; position: relative; display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; color: var(--ink); background: color-mix(in srgb, var(--site-tone) 22%, var(--paper)); font-size: 15px; font-weight: 600; }
+.site-icon-tone-1 { --site-tone: #6e9abd; }
+.site-icon-tone-2 { --site-tone: #c79972; }
+.site-icon img { position: absolute; width: 20px; height: 20px; object-fit: contain; opacity: 0; }
+.site-icon.has-image { background: #fff; box-shadow: inset 0 0 0 1px #25352c10; }
+.site-icon.has-image img { opacity: 1; }
+.site-icon.has-image .site-icon-letter { visibility: hidden; }
 .shortcut-copy { min-width: 0; overflow-wrap: anywhere; font-size: calc(14px * var(--font-scale)); line-height: 1.5; }
 .shortcut-copy small { display: block; font-size: calc(11px * var(--font-scale)); color: var(--muted); margin-top: 2px; }
 .shortcut-row-actions { display: flex; gap: 3px; padding: 0 0 5px 22px; flex-wrap: wrap; }

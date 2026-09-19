@@ -4,7 +4,7 @@
   "description": "在新标签页快速访问网站与管理计划，并可选同步为 Windows 桌面计划壁纸。",
   "version": "0.3.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyJY0/BOpebaCu1EGhUOQPULe3RSsXMz3LP67h2BPaDpWRscKoajhkC1q29Gs+XQYf1liZMrsVkWX+AO8kI2ZgfwsPLgAWpS1AoKmag1gSz/lecSTFa2Hp8g28IDF4D/zsK4VImvaBb2QxBOTeAP21saJYxb++hyyyucktZRB96dYmcARh19wmqQ1A/LGxW+NAKj9yJJ9pO+v4jVSUWKgFQuEEmwMfGQIC7BDGLPUtyUCrS+fpTTjcewmDKS8872QQ6e/8Iuh+gztkiDHhtqdfHxqsJ/+bXUnZ4EG6kxEO+y8gxL41mNPs41Bs4/y8A4xyAjSqcYTKkZ7fdOeBuUIOQIDAQAB",
-  "permissions": ["storage", "sidePanel", "nativeMessaging", "alarms"],
+  "permissions": ["storage", "sidePanel", "nativeMessaging", "alarms", "favicon"],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },

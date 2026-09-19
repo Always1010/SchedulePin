@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, ChevronDown, ExternalLink, FolderPlus, Pencil, Pin, Plus, Search, Trash2, X } from "lucide-react";
 import type { LinkGroup, NavigationAction, NavigationData, NewTabPreferences, QuickLink } from "../navigation";
 import { linkDomain, linkTitle, normalizeLinkUrl } from "../navigation";
+import { SiteIcon } from "./SiteIcon";
 import "./shortcuts.css";
 
 interface Props {
@@ -40,7 +41,7 @@ function ShortcutEditor({ editor, groups, onSave, onClose }: {
       {editor.kind === "link" && <label>网址<input autoFocus required value={url} onChange={event => setUrl(event.target.value)} placeholder="example.com" inputMode="url" /></label>}
       <label>{editor.kind === "link" ? "名称（选填）" : "名称"}<input aria-label="名称" autoFocus={editor.kind === "group"} required={editor.kind === "group"} maxLength={100} value={name} onChange={event => setName(event.target.value)} placeholder={editor.kind === "link" ? "留空使用域名" : undefined} /></label>
       {editor.kind === "link" && <>
-        {previewUrl && <div className="shortcut-entry-preview" aria-live="polite"><span className="shortcut-copy">{linkTitle({ title: name, url: previewUrl })}</span></div>}
+        {previewUrl && <div className="shortcut-entry-preview" aria-live="polite"><SiteIcon url={previewUrl} preview /><span className="shortcut-copy">{linkTitle({ title: name, url: previewUrl })}</span></div>}
         <label>分组<select aria-label="分组" value={groupId} onChange={event => setGroupId(event.target.value)}><option value="">未分组</option>{groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
         <label className="shortcut-checkbox"><input type="checkbox" checked={pinned} onChange={event => setPinned(event.target.checked)} />固定到常用入口</label>
       </>}
@@ -66,7 +67,7 @@ export function ShortcutPanel({ data, preferences, onAction, onPreferences }: Pr
   };
   const rows = (links: QuickLink[]) => <div className="shortcut-links">{links.map((link, index) => <div className="shortcut-row" key={link.id}>
     <a href={link.url} onClick={onAction ? undefined : event => event.preventDefault()} aria-label={`${linkTitle(link)}，${link.url}`}>
-      <span className="shortcut-number">{String(index + 1).padStart(2, "0")}</span><span className="shortcut-copy">{linkTitle(link)}{preferences.showDomains && linkTitle(link) !== linkDomain(link.url) && <small>{linkDomain(link.url)}</small>}</span><ExternalLink size={12} />
+      <SiteIcon url={link.url} /><span className="shortcut-copy">{linkTitle(link)}{preferences.showDomains && linkTitle(link) !== linkDomain(link.url) && <small>{linkDomain(link.url)}</small>}</span><ExternalLink size={12} />
     </a>
     {managing && <div className="shortcut-row-actions">
       <button type="button" disabled={busy} onClick={() => setEditor({ kind: "link", value: link })} aria-label={`编辑 ${linkTitle(link)}`}><Pencil size={14} /></button>
