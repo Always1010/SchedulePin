@@ -82,6 +82,8 @@ try {
   assert.equal(await quick.inputValue(), "测试/"); await quick.fill("");
   const drag = page.getByRole("button", { name: "拖动 网站入口 1 调整入口顺序", exact: true });
   const start = await drag.boundingBox();
+  const siteIcon = await page.locator('[data-link-id="link-0"] .site-icon').boundingBox();
+  assert.ok(start.x + start.width <= siteIcon.x, "拖拽图标显示在网站图标前面");
   const target = await page.locator('[data-link-id="link-2"]').boundingBox();
   await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
   await page.mouse.down(); await page.mouse.move(start.x + start.width / 2, target.y + target.height / 2, { steps: 12 }); await page.mouse.up();

@@ -15,7 +15,7 @@ export function SortableShortcut({ id, title, disabled, editable, children }: { 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
   return <div ref={setNodeRef} className={`shortcut-row${isDragging ? " shortcut-dragging" : ""}`} data-link-id={id}
     style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 2 : undefined }}>
-    {children}
     {editable && <button className="shortcut-drag-handle" type="button" disabled={disabled} {...attributes} {...listeners} aria-label={`拖动 ${title} 调整入口顺序`}><GripVertical size={15} /></button>}
+    {children}
   </div>;
 }
