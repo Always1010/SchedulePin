@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarCheck, PanelRight, Settings } from "lucide-react";
+import { CalendarCheck, Settings } from "lucide-react";
 import type { AppSettings, PlanItem } from "../types";
 import type { NavigationData, NewTabPreferences } from "../navigation";
 import { visualDesignStyle } from "../visualDesign";
 import { NewTabLayout } from "./NewTabLayout";
-import { PlanView, PrincipleCard } from "./PlanView";
+import { PlanView, PrincipleCard, TodoSummaryCard } from "./PlanView";
 import type { BackgroundPreferences, Wallpaper } from "../backgroundModel";
 import { BackgroundLayer, backgroundClass, backgroundSettings, backgroundStyle } from "./BackgroundLayer";
 import "./appearance-preview.css";
@@ -35,7 +35,7 @@ export function AppearancePreview({ settings: originalSettings, tasks, navigatio
   }, []);
   const appearance = `theme-${settings.theme} font-${settings.fontFamily} principle-theme-${settings.principleTheme} principle-font-${settings.principleFontFamily} principle-style-${settings.principleTextStyle}`;
   const plan = <PlanView settings={settings} tasks={tasks} sidePanel={sidePanel} principleExpanded={sidePanel || preferences.principleExpanded}
-    onTogglePrinciple={sidePanel ? undefined : () => {}} onEditPrinciple={() => {}} onAddDetailed={() => {}} />;
+    onTogglePrinciple={sidePanel ? undefined : () => {}} onToggleTasks={sidePanel ? undefined : () => {}} onEditPrinciple={() => {}} onAddDetailed={() => {}} />;
   return <div ref={host} className="appearance-preview-host">
     <div className="appearance-preview-viewport" style={{ width: size.width * scale, height: size.height * scale }}>
       <iframe className="appearance-preview-frame" title={`${labels[mode]}只读预览`} srcDoc={frameMarkup}
@@ -57,10 +57,10 @@ export function AppearancePreview({ settings: originalSettings, tasks, navigatio
       style={{ ...visualDesignStyle(settings), ...backgroundStyle(bg,wallpaper), "--font-scale": settings.fontScale, "--principle-font-scale": settings.principleFontScale, "--card-radius": `${settings.cardRadius}px` } as React.CSSProperties}>
       {bg && <BackgroundLayer preferences={bg} current={wallpaper}/>}
       <header className="topbar"><div className="brand"><span className="brand-mark"><CalendarCheck size={19} /></span><span className="brand-copy"><strong>SchedulePin</strong><small className="desktop-status ready">{sidePanel ? "浏览器侧边栏" : "快捷访问 · 计划"}</small></span></div>
-        <div className="topbar-actions">{!sidePanel && <button className="open-full-page-button todo-visibility"><PanelRight size={15} />{preferences.tasksVisible ? "收起待办" : "展开全部待办"}</button>}<button className="icon-button" aria-label="设置"><Settings size={18} /></button></div>
+        <div className="topbar-actions"><button className="icon-button" aria-label="设置"><Settings size={18} /></button></div>
       </header>
       {sidePanel ? <main className="todo-main">{plan}</main> : <NewTabLayout data={navigation} preferences={preferences}>
-        {preferences.tasksVisible ? plan : <div className="newtab-quiet"><PrincipleCard settings={settings} expanded={preferences.principleExpanded} onToggle={() => {}} onEdit={() => {}} /><p>计划已收起，需要时可以展开完整待办。</p><button><PanelRight size={16} />展开全部待办</button></div>}
+        {preferences.tasksVisible ? plan : <div className="newtab-quiet"><PrincipleCard settings={settings} expanded={preferences.principleExpanded} onToggle={() => {}} onEdit={() => {}} /><TodoSummaryCard tasks={tasks} onExpand={() => {}} /></div>}
       </NewTabLayout>}
     </div>, portalRoot)}
   </div>;

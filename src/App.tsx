@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarCheck, ExternalLink, PanelRight, Settings } from "lucide-react";
+import { CalendarCheck, ExternalLink, Settings } from "lucide-react";
 import { AddItemDialog } from "./components/AddItemDialog";
 import { ArchivePage } from "./components/ArchivePage";
 import { SettingsPage } from "./components/SettingsPage";
 import { NewTabLayout } from "./components/NewTabLayout";
-import { PlanView, PrincipleCard } from "./components/PlanView";
+import { PlanView, PrincipleCard, TodoSummaryCard } from "./components/PlanView";
 import { useNavigation } from "./useNavigation";
 import { changeNavigation, changeNewTabPreferences, type NewTabPreferences } from "./navigation";
 import {
@@ -156,6 +156,7 @@ export default function App() {
   const plan = <PlanView settings={uiSettings} tasks={tasks} loading={loading} sidePanel={sidePanel}
     principleExpanded={sidePanel || preferences.principleExpanded}
     onTogglePrinciple={sidePanel ? undefined : () => void updatePreferences({ principleExpanded: !preferences.principleExpanded })}
+    onToggleTasks={newTabMain ? () => void updatePreferences({ tasksVisible: false }) : undefined}
     onEditPrinciple={() => { setSettingsSection("principle"); setPage("settings"); }} onOpenArchive={openArchive} onAddDetailed={() => setAddOpen(true)}
     onCreate={add} onToggle={toggle} onRename={rename} onDelete={remove} onArchive={archiveTask} onReorder={reorder} />;
 
@@ -175,7 +176,6 @@ export default function App() {
         <div className="topbar-actions">
           {activeSettings.desktopEnabled && <span className="wallpaper-live">桌面同步已开启</span>}
           {sidePanel && <button type="button" className="open-full-page-button" onClick={openFullPage} aria-label="在新标签页打开完整页面" title="在新标签页打开完整页面"><ExternalLink size={15} /><span>完整页面</span></button>}
-          {!sidePanel && !fullPlan && page === "main" && <button type="button" className="open-full-page-button todo-visibility" disabled={!navigationReady} aria-expanded={preferences.tasksVisible} onClick={() => void updatePreferences({ tasksVisible: !preferences.tasksVisible })}><PanelRight size={15} /><span>{preferences.tasksVisible ? "收起待办" : "展开全部待办"}</span></button>}
           <button className="icon-button" onClick={() => { setSettingsSection("style"); setPage("settings"); }} aria-label="设置"><Settings size={18} /></button>
         </div>
       </header>
@@ -189,8 +189,7 @@ export default function App() {
           {preferences.tasksVisible ? plan : <div className="newtab-quiet">
             <PrincipleCard settings={activeSettings} expanded={preferences.principleExpanded}
               onToggle={() => void updatePreferences({ principleExpanded: !preferences.principleExpanded })} onEdit={() => { setSettingsSection("principle"); setPage("settings"); }} />
-            <p>计划已收起，需要时可以展开完整待办。</p>
-            <button type="button" onClick={() => void updatePreferences({ tasksVisible: true })}><PanelRight size={16} />展开全部待办</button>
+            <TodoSummaryCard tasks={tasks} onExpand={() => void updatePreferences({ tasksVisible: true })} />
           </div>}
         </NewTabLayout>
       ) : <div className="newtab-loading">{navigationError || "正在打开新标签页…"}</div>}

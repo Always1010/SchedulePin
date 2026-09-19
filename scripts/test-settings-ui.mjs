@@ -21,8 +21,8 @@ try {
   await page.getByRole("button", { name: "桌面展示", exact: true }).click();
   await page.getByText("显示范围与布局", { exact: true }).waitFor();
   assert.equal(await page.getByText("显示器预览 的计划布局", { exact: true }).count(), 1, "monitor selection and layout share one page");
-  assert.equal(await page.getByText("展开完整待办", { exact: true }).count(), 0, "task visibility is not mixed into shortcuts");
-  await page.getByRole("button", { name: "待办区域", exact: true }).click(); await page.getByText("展开完整待办", { exact: true }).waitFor();
+  assert.equal(await page.getByText("默认展示完整待办", { exact: true }).count(), 0, "task visibility is not mixed into shortcuts");
+  await page.getByRole("button", { name: "待办区域", exact: true }).click(); await page.getByText("默认展示完整待办", { exact: true }).waitFor();
   await page.getByRole("button", { name: "原则卡片", exact: true }).click();
   const expandPrinciple = page.getByRole("checkbox", { name: "默认展开原则卡片", exact: true });
   assert.equal(await expandPrinciple.isChecked(), true);

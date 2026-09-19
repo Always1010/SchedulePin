@@ -20,12 +20,9 @@
 .principle-collapsed .principle-heading { margin-bottom: 0; }
 .principle-collapse-button { display: grid; place-items: center; }
 .principle-collapsed .principle-collapse-button svg { transform: rotate(-90deg); }
-.newtab-quiet { max-width: 700px; margin: 7cqh auto 0; color: var(--ink); }
-.newtab-quiet > p { display: inline-flex; margin: 25px 0 10px; padding: 10px 13px; border: 1px solid var(--line); border-radius: min(10px, var(--card-radius)); color: var(--ink); background: var(--surface); backdrop-filter: blur(10px); font-size: calc(14px * var(--font-scale)); line-height: 1.5; }
-.newtab-quiet > button { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); padding: 10px 15px; border-radius: 10px; color: var(--ink); background: var(--surface); cursor: pointer; }
+.newtab-quiet { width: 100%; max-width: 920px; margin: 7cqh auto 0; color: var(--ink); }
 .newtab-loading { padding: 40px; color: var(--muted); }
 .newtab-error { padding: 8px 20px; color: var(--ink); font-size: 13px; }
-.app .todo-visibility { font-size: calc(12px * var(--font-scale)); }
 @container (max-width: 680px) {
   .newtab-workspace, .newtab-workspace.navigation-right { display: flex; flex-direction: column; }
   .newtab-navigation, .newtab-workspace.navigation-right .newtab-navigation { order: 0; flex: 0 0 auto; max-height: 32%; border: 0; border-bottom: 1px solid var(--line); }
@@ -38,7 +35,6 @@
 }
 @media (max-width: 540px) {
   .topbar .wallpaper-live { display: none; }
-  .app .todo-visibility { padding: 0 6px; font-size: 11px; }
   .app .brand-copy strong { font-size: 13px; }
   .topbar { padding-left: 14px; padding-right: 14px; }
 }
